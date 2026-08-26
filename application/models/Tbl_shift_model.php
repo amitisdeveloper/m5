@@ -104,7 +104,7 @@ function get_tbl_shift_usershift($id)
 		$this->db->order_by('orderby', 'asc');
         return $this->db->count_all_results();
     }
-    function get_all_tbl_shift_master_for_trans($updated_by,$fromdate,$todate){
+    function get_all_tbl_shift_master_for_transold($updated_by,$fromdate,$todate){
         $this->db->select('tbl_shift.id AS tbl_shift_id, 
         tbl_shift.*, 
         user_shift_timings.id AS user_shift_timing_id, 
@@ -117,13 +117,64 @@ function get_tbl_shift_usershift($id)
         $this->db->where('user_shift_timings.open_date >=', $fromdate);
         $this->db->where('user_shift_timings.open_date <=', $todate);
         $this->db->where('user_shift_timings.is_active = 1');
-        $this->db->order_by('user_shift_timings.open_date', 'ASC'); // Order by date ascending
+        //$this->db->order_by('user_shift_timings.open_date', 'ASC'); // Order by date ascending
         $this->db->order_by('user_shift_timings.master', 'ASC'); // Order by time ascending
         $result = $this->db->get()->result_array();
        // echo $this->db->last_query(); die; 
          return $result;
     }
+    
+function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
+{
+    $this->db->select('
+        tbl_shift.id AS tbl_shift_id,
+        tbl_shift.*,
+        user_shift_timings.id AS user_shift_timing_id,
+        user_shift_timings.*,
+        tbl_shift.open_date AS tbl_shift_open_date,
+        user_shift_timings.open_date AS user_shift_open_date
+    ');
 
+    $this->db->from('user_shift_timings');
+
+    $this->db->join(
+        'tbl_shift',
+        'user_shift_timings.shift_id = tbl_shift.id',
+        'left'
+    );
+
+    $this->db->where('user_shift_timings.updated_by', $updated_by);
+    $this->db->where('user_shift_timings.open_date >=', $fromdate);
+    $this->db->where('user_shift_timings.open_date <=', $todate);
+    $this->db->where('user_shift_timings.is_active', 1);
+
+    // 1. Sort by date
+    $this->db->order_by(
+        'user_shift_timings.open_date',
+        'ASC'
+    );
+
+    // 2. PM first, AM always last
+    $this->db->order_by("
+        CASE
+            WHEN UPPER(user_shift_timings.master) LIKE '%AM' THEN 1
+            ELSE 0
+        END
+    ", 'ASC', false);
+
+    // 3. Sort actual time chronologically
+    $this->db->order_by("
+        STR_TO_DATE(user_shift_timings.master, '%h:%i %p')
+    ", 'ASC', false);
+
+    $result = $this->db->get()->result_array();
+
+    // Debug:
+    // echo $this->db->last_query();
+    // die;
+
+    return $result;
+}
     function get_all_tbl_shift_master_cutjantri($params = array())
     {
 //print_r($this->session->userdata['userid']); die;

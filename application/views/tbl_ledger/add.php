@@ -347,7 +347,7 @@
                                     $share_message = "https://ubiquitous-dolphin-d5d38e.netlify.app\n\n"
     . "*user- " . ($val['username'] ?? '') . " \n"
     . "*Pass- " . ($val['password'] ?? '') . "\n\n"
-    . "Thanks - bull99exch.com";
+    . "Thanks - bull99exchange";
 
 $share_url = 'https://wa.me/?text=' . rawurlencode($share_message);
                                     ?>
