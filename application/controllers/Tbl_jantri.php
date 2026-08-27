@@ -77,8 +77,9 @@ class Tbl_jantri extends CI_Controller
 		date_default_timezone_set('Asia/Kolkata');
 		$data['tbl_transactions'] = [];
 		$data['sendjantri'] = 0;
-		$data['apply_commission'] = $useNewView && $this->input->get('apply_commission') === '1';
-		$data['apply_patti'] = $useNewView && $this->input->get('apply_patti') === '1';
+		$isDAdjustment = $useNewView && $this->input->get('calculation_action') === 'd_adjustment';
+		$data['apply_commission'] = $useNewView && !$isDAdjustment && $this->input->get('apply_commission') === '1';
+		$data['apply_patti'] = $useNewView && !$isDAdjustment && $this->input->get('apply_patti') === '1';
 		if (isset($_GET) && !(empty($_GET))) {
 			//echo '<pre>'; print_r($_GET); echo '</pre>';	die;
 			$pid = $_GET['pid'];

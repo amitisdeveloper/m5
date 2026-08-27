@@ -267,23 +267,12 @@
     }
 
     .jantri-d-field {
-        flex: 0 1 220px;
+        flex: 0 1 135px;
         margin: 0;
     }
 
-    .jantri-d-action {
-        display: flex;
-        gap: 8px;
-    }
-
-    .jantri-d-action .form-control {
-        min-width: 0;
-    }
-
-    .jantri-d-action .btn {
-        flex: 0 0 78px;
-        width: auto;
-        margin: 0;
+    .jantri-d-submit {
+        flex: 0 0 110px;
     }
 
     .jantri-d-field label,
@@ -320,9 +309,10 @@
             grid-template-columns: 1fr;
         }
 
-        .jantri-filter-field,
-        .jantri-d-field,
-        .jantri-options,
+                .jantri-filter-field,
+                .jantri-d-field,
+                .jantri-d-submit,
+                .jantri-options,
         .jantri-submit,
         .jantri-total {
             width: 100%;
@@ -404,17 +394,14 @@
             </div>
             <div class="jantri-d-field">
                 <label for="d-percentage">D-Percentage</label>
-                <div class="jantri-d-action">
-                    <input id="d-percentage" name="d_percentage" type="number" min="0" max="100" step="any" class="form-control" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
-                    <button type="submit" name="calculation_action" value="d_percentage" class="btn btn-primary">Submit</button>
-                </div>
+                <input id="d-percentage" name="d_percentage" type="number" min="0" max="100" step="any" class="form-control" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
             </div>
             <div class="jantri-d-field">
                 <label for="d-amount">D-Amount</label>
-                <div class="jantri-d-action">
-                    <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
-                    <button type="submit" name="calculation_action" value="d_amount" class="btn btn-primary">Submit</button>
-                </div>
+                <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
+            </div>
+            <div class="jantri-d-submit">
+                <button type="submit" name="calculation_action" value="d_adjustment" class="btn btn-primary btn-block">Submit</button>
             </div>
             <div class="jantri-total">
                 <label for="tamnt">Total Amount</label>
@@ -607,19 +594,16 @@ if (!empty($tbl_transactions)) {
     }
 }
 
-// Each D adjustment has its own submit action. This prevents a value left in
-// the other D field from being applied at the same time.
+// D-Percentage and D-Amount share one action, separate from all other filters.
 $calculationAction = isset($_GET['calculation_action'])
     ? (string)$_GET['calculation_action']
     : 'remaining';
-$applyDPercentage = $calculationAction === 'd_percentage';
-$applyDAmount = $calculationAction === 'd_amount';
-$applyDAdjustment = $applyDPercentage || $applyDAmount;
+$applyDAdjustment = $calculationAction === 'd_adjustment';
 
-$dPercentage = $applyDPercentage && isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
+$dPercentage = $applyDAdjustment && isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
     ? min(100, max(0, (float)$_GET['d_percentage']))
     : 0;
-$dAmount = $applyDAmount && isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
+$dAmount = $applyDAdjustment && isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
     ? max(0, (float)$_GET['d_amount'])
     : 0;
 
