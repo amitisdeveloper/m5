@@ -341,10 +341,35 @@
         <form name="custom" action="" method="GET" class="jantri-filter-form">
             <div class="form-group jantri-filter-field">
                 <label for="shift">Shift</label>
+                <?php
+                date_default_timezone_set('Asia/Kolkata');
+                $ttime = time();
+                $nearest_time = PHP_INT_MAX;
+                $nearest_shift_id = null;
+
+                foreach ($shifts as $key => $shift) {
+                    if ($_SESSION['role'] == 'Admin' || $_SESSION['role'] == 'Super Admin' || $_SESSION['role'] == 'Master') {
+                        $role_time = isset($shift['master']) ? $shift['master'] : '00:00 AM';
+                    } elseif ($_SESSION['role'] == 'Data Entry Operator' || $_SESSION['role'] == 'Staff') {
+                        $role_time = isset($shift['data_entry_operator']) ? $shift['data_entry_operator'] : '00:00 AM';
+                    } else {
+                        $role_time = isset($shift['master']) ? $shift['master'] : '00:00 AM';
+                    }
+
+                    $time = strtotime(date('Y-m-d', strtotime($shift['open_date'])) . ' ' . date('H:i', strtotime($role_time)));
+
+                    if ($ttime < $time && $time < $nearest_time) {
+                        $nearest_time = $time;
+                        $nearest_shift_id = $shift['id'];
+                    }
+                }
+
+                $selected_shift_id = isset($_GET['pid']) ? $_GET['pid'] : $nearest_shift_id;
+                ?>
                 <select name="pid" id="shift" class="form-control" required>
                     <option value="">Choose option</option>
                     <?php foreach ($shifts as $key => $val) { ?>
-                        <option value="<?= $val['id'] ?>" <?= (isset($_GET['pid']) && $_GET['pid'] == $val['id']) ? 'selected' : '' ?>><?= html_escape($val['shift_name']) ?></option>
+                        <option value="<?= $val['id'] ?>" <?= ((string) $selected_shift_id === (string) $val['id']) ? 'selected' : '' ?>><?= html_escape($val['shift_name']) ?></option>
                     <?php } ?>
                 </select>
             </div>
