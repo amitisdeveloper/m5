@@ -267,7 +267,22 @@
     }
 
     .jantri-d-field {
-        flex: 0 1 135px;
+        flex: 0 1 220px;
+        margin: 0;
+    }
+
+    .jantri-d-action {
+        display: flex;
+        gap: 8px;
+    }
+
+    .jantri-d-action .form-control {
+        min-width: 0;
+    }
+
+    .jantri-d-action .btn {
+        flex: 0 0 78px;
+        width: auto;
         margin: 0;
     }
 
@@ -389,18 +404,24 @@
             </div>
             <div class="jantri-d-field">
                 <label for="d-percentage">D-Percentage</label>
-                <input id="d-percentage" name="d_percentage" type="number" min="0" max="100" step="any" class="form-control" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
+                <div class="jantri-d-action">
+                    <input id="d-percentage" name="d_percentage" type="number" min="0" max="100" step="any" class="form-control" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
+                    <button type="submit" name="calculation_action" value="d_percentage" class="btn btn-primary">Submit</button>
+                </div>
             </div>
             <div class="jantri-d-field">
                 <label for="d-amount">D-Amount</label>
-                <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
+                <div class="jantri-d-action">
+                    <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
+                    <button type="submit" name="calculation_action" value="d_amount" class="btn btn-primary">Submit</button>
+                </div>
             </div>
             <div class="jantri-total">
                 <label for="tamnt">Total Amount</label>
                 <input id="tamnt" class="form-control" value="" readonly>
             </div>
             <div class="jantri-submit">
-                <button type="submit" name="submit" value="1" class="btn btn-primary btn-block">Submit</button>
+                <button type="submit" name="calculation_action" value="remaining" class="btn btn-primary btn-block">Submit</button>
             </div>
         </form>
     </div>
@@ -586,14 +607,38 @@ if (!empty($tbl_transactions)) {
     }
 }
 
-// D adjustments are applied once to each final Jantri cell after all
-// transaction amounts have been distributed and combined.
-$dPercentage = isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
+// Each D adjustment has its own submit action. This prevents a value left in
+// the other D field from being applied at the same time.
+$calculationAction = isset($_GET['calculation_action'])
+    ? (string)$_GET['calculation_action']
+    : 'remaining';
+$applyDPercentage = $calculationAction === 'd_percentage';
+$applyDAmount = $calculationAction === 'd_amount';
+$applyDAdjustment = $applyDPercentage || $applyDAmount;
+
+$dPercentage = $applyDPercentage && isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
     ? min(100, max(0, (float)$_GET['d_percentage']))
     : 0;
-$dAmount = isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
+$dAmount = $applyDAmount && isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
     ? max(0, (float)$_GET['d_amount'])
     : 0;
+
+// Round to the nearest 50 while keeping 25 and 75 in the lower bucket:
+// 0..25 => 0, >25..75 => 50, >75..100 => 100 (repeated per hundred).
+$roundDAdjustment = function ($amount) {
+    $amount = max(0, (float)$amount);
+    $hundreds = floor($amount / 100) * 100;
+    $remainder = $amount - $hundreds;
+
+    if ($remainder <= 25) {
+        return $hundreds;
+    }
+    if ($remainder <= 75) {
+        return $hundreds + 50;
+    }
+
+    return $hundreds + 100;
+};
 
 // Print the final table of distributed amounts
 //print_r($table); die;
@@ -981,8 +1026,12 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
                         if ($dPercentage > 0) {
                             $rawValue -= ($rawValue * $dPercentage / 100);
                         }
-                        // Match the requested buckets: 7.888 -> 5 and 8.6 -> 10.
-                        $value = round(floor($rawValue) / 5) * 5;
+                        if ($applyDAdjustment) {
+                            $value = $roundDAdjustment($rawValue);
+                        } else {
+                            // Preserve the existing rounding for the remaining filters.
+                            $value = round(floor($rawValue) / 5) * 5;
+                        }
                      // Accumulate the row sum
                      $rowSum += $value;
     ?>
