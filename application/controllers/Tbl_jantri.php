@@ -134,16 +134,9 @@ class Tbl_jantri extends CI_Controller
 			}
 			
 		}
-		if($this->session->userdata['id'] != '1'){
-		//$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_cutjantri();
-		$newTimestamp = time() + (12 * 60 * 60); // Add 12 hours to the current time (12 hours * 60 minutes * 60 seconds)
-		$todate = date('Y-m-d', $newTimestamp);
-		$fromdate = date('Y-m-d', time());
-		$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans($this->session->userdata['id'],$fromdate,$todate);
-		}
-		else{
-			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift();	
-		}
+		// Use the same shift source as Party Jantri. The previous
+		// date-restricted query could leave the Cutting Jantri dropdown empty.
+		$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master($this->session->userdata['id']);
 		$tbl_ledger_elements = $this->Tbl_ledger_model->get_tbl_ledger($this->session->userdata['id']);
 		$data['ledger'] = $tbl_ledger_elements;
 		//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
