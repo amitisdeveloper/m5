@@ -271,10 +271,6 @@
         margin: 0;
     }
 
-    .jantri-d-submit {
-        flex: 0 0 110px;
-    }
-
     .jantri-d-field label,
     .jantri-total label {
         display: block;
@@ -309,10 +305,9 @@
             grid-template-columns: 1fr;
         }
 
-                .jantri-filter-field,
-                .jantri-d-field,
-                .jantri-d-submit,
-                .jantri-options,
+        .jantri-filter-field,
+        .jantri-d-field,
+        .jantri-options,
         .jantri-submit,
         .jantri-total {
             width: 100%;
@@ -400,15 +395,12 @@
                 <label for="d-amount">D-Amount</label>
                 <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
             </div>
-            <div class="jantri-d-submit">
-                <button type="submit" name="calculation_action" value="d_adjustment" class="btn btn-primary btn-block">Submit</button>
-            </div>
             <div class="jantri-total">
                 <label for="tamnt">Total Amount</label>
                 <input id="tamnt" class="form-control" value="" readonly>
             </div>
             <div class="jantri-submit">
-                <button type="submit" name="calculation_action" value="remaining" class="btn btn-primary btn-block">Submit</button>
+                <button type="submit" name="submit" value="1" class="btn btn-primary btn-block">Submit</button>
             </div>
         </form>
     </div>
@@ -594,35 +586,14 @@ if (!empty($tbl_transactions)) {
     }
 }
 
-// D-Percentage and D-Amount share one action, separate from all other filters.
-$calculationAction = isset($_GET['calculation_action'])
-    ? (string)$_GET['calculation_action']
-    : 'remaining';
-$applyDAdjustment = $calculationAction === 'd_adjustment';
-
-$dPercentage = $applyDAdjustment && isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
+// D adjustments are applied once to each final Jantri cell after all
+// transaction amounts have been distributed and combined.
+$dPercentage = isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
     ? min(100, max(0, (float)$_GET['d_percentage']))
     : 0;
-$dAmount = $applyDAdjustment && isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
+$dAmount = isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
     ? max(0, (float)$_GET['d_amount'])
     : 0;
-
-// Round to the nearest 50 while keeping 25 and 75 in the lower bucket:
-// 0..25 => 0, >25..75 => 50, >75..100 => 100 (repeated per hundred).
-$roundDAdjustment = function ($amount) {
-    $amount = max(0, (float)$amount);
-    $hundreds = floor($amount / 100) * 100;
-    $remainder = $amount - $hundreds;
-
-    if ($remainder <= 25) {
-        return $hundreds;
-    }
-    if ($remainder <= 75) {
-        return $hundreds + 50;
-    }
-
-    return $hundreds + 100;
-};
 
 // Print the final table of distributed amounts
 //print_r($table); die;
@@ -1010,12 +981,8 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
                         if ($dPercentage > 0) {
                             $rawValue -= ($rawValue * $dPercentage / 100);
                         }
-                        if ($applyDAdjustment) {
-                            $value = $roundDAdjustment($rawValue);
-                        } else {
-                            // Preserve the existing rounding for the remaining filters.
-                            $value = round(floor($rawValue) / 5) * 5;
-                        }
+                        // Match the requested buckets: 7.888 -> 5 and 8.6 -> 10.
+                        $value = round(floor($rawValue) / 5) * 5;
                      // Accumulate the row sum
                      $rowSum += $value;
     ?>
