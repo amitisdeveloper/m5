@@ -148,6 +148,19 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
     $this->db->where('user_shift_timings.open_date <=', $todate);
     $this->db->where('user_shift_timings.is_active', 1);
 
+    // A shift can have several historical timing rows. The dropdown needs
+    // only the newest timing row for each shift belonging to this user.
+    $latestTimingSql = 'user_shift_timings.id = (
+        SELECT MAX(latest_timing.id)
+        FROM user_shift_timings AS latest_timing
+        WHERE latest_timing.shift_id = user_shift_timings.shift_id
+          AND latest_timing.updated_by = user_shift_timings.updated_by
+          AND latest_timing.open_date >= '.$this->db->escape($fromdate).'
+          AND latest_timing.open_date <= '.$this->db->escape($todate).'
+          AND latest_timing.is_active = 1
+    )';
+    $this->db->where($latestTimingSql, null, false);
+
     // 1. Sort by date
     $this->db->order_by(
         'user_shift_timings.open_date',

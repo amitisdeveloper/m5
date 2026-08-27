@@ -53,6 +53,7 @@ $route['view_jantri'] = 'Tbl_jantri/view_jantri_intotal';
 $route['partyjantri'] = 'Tbl_jantri/partyjantri';
 //$route['cutjantri'] = 'Tbl_jantri/cutjantri';
 $route['cutjantri'] = 'Tbl_jantri/cutjantritemp';
+$route['cutjantri-new'] = 'Tbl_jantri/cutjantrinew';
 $route['partyjantri'] = 'Tbl_jantri/partyjantri';
 $route['openno'] = 'Tbl_openno/add'; 
 $route['openno_admin'] = 'Tbl_openno/add_admin';

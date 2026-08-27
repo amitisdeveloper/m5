@@ -72,11 +72,13 @@ class Tbl_jantri extends CI_Controller
 	/*
      * Adding a new tbl_jantri
      */
-	function cutjantritemp()
+	function cutjantritemp($useNewView = false)
 	{ //pr($_GET,1);
 		date_default_timezone_set('Asia/Kolkata');
 		$data['tbl_transactions'] = [];
 		$data['sendjantri'] = 0;
+		$data['apply_commission'] = $useNewView && $this->input->get('apply_commission') === '1';
+		$data['apply_patti'] = $useNewView && $this->input->get('apply_patti') === '1';
 		if (isset($_GET) && !(empty($_GET))) {
 			//echo '<pre>'; print_r($_GET); echo '</pre>';	die;
 			$pid = $_GET['pid'];
@@ -145,8 +147,15 @@ class Tbl_jantri extends CI_Controller
 		$tbl_ledger_elements = $this->Tbl_ledger_model->get_tbl_ledger($this->session->userdata['id']);
 		$data['ledger'] = $tbl_ledger_elements;
 		//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
-		$data['_view'] = 'tbl_jantri/cut_index_temp';
+		$data['_view'] = $useNewView
+			? 'tbl_jantri/cut_index_temp'
+			: 'tbl_jantri/cut_index_legacy';
 		$this->load->view('layouts/main', $data);
+	}
+
+	function cutjantrinew()
+	{
+		$this->cutjantritemp(true);
 	}
 
 	/*

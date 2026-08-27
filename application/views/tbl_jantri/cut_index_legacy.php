@@ -53,27 +53,8 @@
             console.log('total heading = ' + totalHead);
             console.log('total P = ' + totalP);
             console.log('total all = ' + totalall);
-            recalculateJantriTotals();
         });
-
     });
-
-    function recalculateJantriTotals() {
-        var grandTotal = 0;
-
-        $('.jantri-grid tbody tr').each(function () {
-            var rowTotal = 0;
-            $(this).find('.med').each(function () {
-                rowTotal += Number($(this).val()) || 0;
-            });
-
-            $(this).find('.medrow').val(rowTotal);
-            grandTotal += rowTotal;
-        });
-
-        $('#ttamntt').val(grandTotal);
-        $('#tamnt').val(grandTotal);
-    }
 
     function submitjantri() {
         let params = (new URL(document.location)).searchParams;
@@ -106,6 +87,147 @@
             "&tamnt=" + parseInt(tamnt));
     }
 
+    function calccutting(valbtn) {
+        valbtn.disabled = true;
+        var aamnt = '';
+        var aperc = '';
+        var damnt = '';
+        var dperc = '';
+        var tamnt = 0;
+        aamnt = document.getElementById('aamnt').value;
+        aperc = document.getElementById('aperc').value;
+        damnt = document.getElementById('damnt').value;
+        dperc = document.getElementById('dperc').value;
+
+
+        if (aamnt) {
+            //alert(aamnt);
+            $(".med").each(function () {
+                var val = $(this).val();
+                var famnt = val - aamnt;
+                //alert(famnt)
+                if (famnt > 24) {
+                    famnt = Math.round(famnt / 50) * 50;
+                    //alert(famnt)
+                    $(this).val(famnt);
+                } else if (famnt < 25 && famnt > 0) {
+                    famnt = 25;
+                    $(this).val(famnt);
+                } else {
+
+                    famnt = 0;
+                    $(this).val(famnt);
+                }
+                // tamnt = tamnt + parseInt($(this).val());
+            });
+        }
+        if (damnt) {
+            $(".med").each(function () {
+                var val = $(this).val();
+                var famnt = val - damnt;
+                if (famnt > 24) {
+                    famnt = Math.round(famnt / 50) * 50;
+                    $(this).val(famnt);
+                } else if (famnt < 25 && famnt > 0) {
+                    famnt = 25;
+                    $(this).val(famnt);
+                } else {
+
+                    famnt = 0;
+                    $(this).val(famnt);
+                }
+                //  tamnt = tamnt + parseInt($(this).val());
+            });
+        }
+        if (aperc) {
+            $(".med").each(function () {
+                var val = $(this).val();
+                var famnt = val - (val * (aperc / 100));
+                if (famnt > 24) {
+                    famnt = Math.round(famnt / 50) * 50;
+                    $(this).val(famnt);
+                } else if (famnt < 25 && famnt > 0) {
+                    famnt = 25;
+                    $(this).val(famnt);
+                } else {
+
+                    famnt = 0;
+                    $(this).val(famnt);
+                }
+                //   tamnt = tamnt + parseInt($(this).val());
+
+            });
+
+        }
+        if (dperc) {
+            $(".med").each(function () {
+                var val = $(this).val();
+                var famnt = val - (val * (dperc / 100));
+                if (famnt > 24) {
+                    famnt = Math.round(famnt / 50) * 50;
+                    $(this).val(famnt);
+                } else if (famnt < 25 && famnt > 0) {
+                    famnt = 25;
+                    $(this).val(famnt);
+                } else {
+                    famnt = 0;
+                    $(this).val(famnt);
+                }
+                // alert($(this).val())
+
+                //  tamnt = tamnt + parseInt($(this).val());
+
+            });
+            // alert(tamnt)
+        }
+        var countt = 0;
+        $(".med").each(function () {
+            var val = $(this).val();
+
+            // alert($(this).val())           
+            tamnt = tamnt + parseInt($(this).val());
+            countt = countt + 1;
+        });
+        //alert(tamnt)
+
+        document.getElementById('tamnt').value = tamnt;
+        document.getElementById('ttamntt').value = tamnt;
+        var rowtotal = 0;
+        for (i = 1; i < 101; i++) {
+            if (i.toString().length == 1) {
+                i = '0' + i;
+            }
+            //alert("sr_" + i);
+            rowtotal = rowtotal + parseInt(document.getElementsByName("sr_" + i)[0].value);
+
+            if (i % 10 === 0) {
+                var frow = (i / 10) - 1;
+                //console.log('row_'+(frow));
+                document.getElementsByName('row_' + (frow))[0].value = rowtotal;
+                rowtotal = 0;
+            }
+        }
+
+        /* for(i=0;i<10;i++){
+            var rowtotal = 0;
+            for(j=0;j<10;++j){
+                
+                //document.getElementsByName("acc")[0].value
+                //console.log(document.getElementsByName("sr"+i+j)[0].value)
+            
+            if(i+j !='00'){
+            //console.log(document.getElementsByName("sr_"+i+j)[0].value)
+            rowtotal = rowtotal + parseInt(document.getElementsByName("sr_"+i+j)[0].value);
+            console.log('sr_'+i+j);
+            console.log(rowtotal);
+            }
+            else{
+                rowtotal = rowtotal + parseInt(document.getElementsByName("sr_100")[0].value);
+            }
+            }
+            document.getElementsByName("row_"+i)[0].value = rowtotal;
+        } */
+    }
 </script>
 <style>
     .ftotal {
@@ -220,106 +342,11 @@
         margin-bottom: 0px;
     }
 
-    .jantri-filter-form {
-        display: flex;
-        align-items: flex-end;
-        flex-wrap: wrap;
-        gap: 12px;
-        padding: 10px;
-    }
-
-    .jantri-filter-field {
-        flex: 1 1 180px;
-        margin: 0;
-    }
-
-    .jantri-filter-field label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 600;
-    }
-
-    .jantri-options {
-        display: flex;
-        align-items: center;
-        flex: 1 1 230px;
-        gap: 18px;
-        min-height: 38px;
-    }
-
-    .jantri-option {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        margin: 0;
-        white-space: nowrap;
-        font-weight: 600;
-    }
-
-    .jantri-option input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        margin: 0;
-    }
-
-    .jantri-submit {
-        flex: 0 0 110px;
-    }
-
-    .jantri-d-field {
-        flex: 0 1 135px;
-        margin: 0;
-    }
-
-    .jantri-d-field label,
-    .jantri-total label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 600;
-    }
-
-    .jantri-total {
-        flex: 1 1 150px;
-    }
-
-    .jantri-table-wrap {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .jantri-grid {
-        min-width: 980px;
-    }
-
     .table td,
     .table th {
         padding: 0;
         vertical-align: top;
         border-top: 1px solid #dee2e6;
-    }
-
-    @media (max-width: 767px) {
-        .jantri-filter-form {
-            display: grid;
-            grid-template-columns: 1fr;
-        }
-
-        .jantri-filter-field,
-        .jantri-d-field,
-        .jantri-options,
-        .jantri-submit,
-        .jantri-total {
-            width: 100%;
-        }
-
-        .jantri-options {
-            justify-content: flex-start;
-        }
-
-        .x_panel {
-            overflow: hidden;
-        }
     }
 </style>
 <div id='loadingmsg' style='display: none;'>Saving, please wait...</div>
@@ -338,46 +365,75 @@
 
 <div class="x_panel">
     <div class="x_title">
-        <form name="custom" action="" method="GET" class="jantri-filter-form">
-            <div class="form-group jantri-filter-field">
-                <label for="shift">Shift</label>
-                <select name="pid" id="shift" class="form-control" required>
-                    <option value="">Choose option</option>
-                    <?php foreach ($shifts as $key => $val) { ?>
-                        <option value="<?= $val['id'] ?>" <?= (isset($_GET['pid']) && $_GET['pid'] == $val['id']) ? 'selected' : '' ?>><?= html_escape($val['shift_name']) ?></option>
-                    <?php } ?>
-                </select>
+        <h2 style="text-decoration:underline;"><b>Jantri Filters</b></h2>
+        <?php if ($this->session->userdata['userid'] != '1' && !empty($_GET)) { ?>
+            <!-- <form action="tbl_transactions/sendjantri" method="post" style="position: absolute;right: 0;">
+                
+            </form> -->
+        <?php } ?>
+        <form name="custom" action="" method="GET" style="margin-right: 93px;">
+            <div class="nav navbar-right panel_toolbox">
+                <div class="form-group pull-right top_search">
+                    <div class="input-group">
+                        <h2 style="margin-right:10px;"><b>Date</b></h2>
+                        <input name="date" class="birthdaymaster form-control" type="text" value="<?=(isset($_GET['date']))?$_GET['date']:''?>" autocomplete="off" required="">
+                        <div class="alert" style="display:none">Please Select Shift First</div>
+                        <input type="submit" name="submit" value="Submit" autocomplete="off" onclick=""
+                            style="width: 20%;margin-left: 20px;margin-right: 20px;">
+                    </div>
+                </div>
             </div>
-            <div class="form-group jantri-filter-field">
-                <label for="jantri-date">Date</label>
-                <input id="jantri-date" name="date" class="birthdaymaster form-control" type="text" value="<?= isset($_GET['date']) ? html_escape($_GET['date']) : '' ?>" autocomplete="off" required>
-            </div>
-            <div class="jantri-options" aria-label="Amount adjustments">
-                <label class="jantri-option" for="apply-commission">
-                    <input id="apply-commission" type="checkbox" name="apply_commission" value="1" <?= $apply_commission ? 'checked' : '' ?>>
-                    Commission
-                </label>
-                <label class="jantri-option" for="apply-patti">
-                    <input id="apply-patti" type="checkbox" name="apply_patti" value="1" <?= $apply_patti ? 'checked' : '' ?>>
-                    Patti
-                </label>
-            </div>
-            <div class="jantri-d-field">
-                <label for="d-percentage">D-Percentage</label>
-                <input id="d-percentage" name="d_percentage" type="number" min="0" max="100" step="any" class="form-control" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
-            </div>
-            <div class="jantri-d-field">
-                <label for="d-amount">D-Amount</label>
-                <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
-            </div>
-            <div class="jantri-total">
-                <label for="tamnt">Total Amount</label>
-                <input id="tamnt" class="form-control" value="" readonly>
-            </div>
-            <div class="jantri-submit">
-                <button type="submit" name="submit" value="1" class="btn btn-primary btn-block">Submit</button>
+            <div class="nav navbar-left panel_toolbox">
+                <h2 style="margin-right:10px;"><b>Shift</b></h2>
+                <!-- Split button -->
+                <div class="btn-group" style="height: 36px; margin-right: 10px;">
+                    <select name="pid" id="shift" class="form-control" required>
+                        <option value="">Choose option</option>
+                        <?php foreach ($shifts as $key => $val) {
+                            ?>
+                            <option value="<?= $val['id'] ?>" <?=(isset($_GET['pid'])&&$_GET['pid']==$val['id'])?'selected':''?>><?= $val['shift_name'] ?></option>
+                            <?php
+                        } ?>
+                    </select>
+                    <div class="alert" style="display:none">Please Select Shift First</div>
+                </div>
             </div>
         </form>
+
+        <div class="clearfix"></div>
+
+    </div>
+
+    <div class="x_content">
+        <table class="table table-bordered table-hover">
+            <thead>
+            </thead>
+            <tbody>
+                <tr>
+                    <?php if ($this->session->userdata['userid'] != '1') { ?>
+                        <td>Self Patti in Percentage</td>
+                        <td><input id="aperc" type="text" name="perc"></td>
+                    <?php } ?>
+                    <td>Total Amount</td>
+                    <td style="visibility:hidden">A-Amount</td>
+                    <td style="visibility:hidden"><input id="aamnt" type="text" name="amt" value=""></td>
+                    <td style="visibility:hidden">A-Percentage</td>
+            <td style="visibility:hidden"><input id="aperc" type="text" name="perc"></td>
+            <td style="visibility:hidden">A-Amount</td>
+            <td style="visibility:hidden"><input id="aamnt" type="text" name="amt" value=""></td>
+                </tr>
+                <tr>
+                    <td>D-Percentage</td>
+                    <td><input id="dperc" type="text" name="perc"></td>
+                    <td><input id="tamnt" name="total_amount" value="" readonly></td>
+
+                    <td>D-Amount</td>
+                    <td><input id="damnt" type="text" name="amt"></td>
+                    <td><input type="button" class="form-success" id="calcbtn" onclick="calccutting(this)" name="Submit"
+                            value="Submit"></td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <form action="tbl_transactions/sendjantri" method="post" style="">
@@ -414,7 +470,7 @@
 $table = array_fill(1, 100, 0);
 
 // Function to distribute amounts according to the rules
-function distributeAmount($number, $amount, &$table, $applyCommission, $applyPatti, $dcomm = 0, $dmcomm = 0, $dhissa = 0, $tppercentage = 0)
+function distributeAmount($number, $amount, &$table, $dcomm = 0, $dmcomm = 0, $dhissa = 0, $tppercentage = 0)
 {
     // ---------- 1) Normalize / sanitize all numeric inputs ----------
     // Handles: "", null, "  ", "1,000", "5%", "₹100", tabs/newlines, etc.
@@ -445,17 +501,17 @@ function distributeAmount($number, $amount, &$table, $applyCommission, $applyPat
     $adjustedAmount = $amount;
 
     // Distributor commission (dcomm + dmcomm)
-    if ($applyCommission && ($dcomm > 0 || $dmcomm > 0)) {
+    if ($dcomm > 0 || $dmcomm > 0) {
         $adjustedAmount -= (($dcomm + $dmcomm) * $adjustedAmount / 100);
     }
 
     // Share amount (dhissa)
-    if ($applyPatti && $dhissa > 0) {
+    if ($dhissa > 0) {
         $adjustedAmount -= ($dhissa * $adjustedAmount / 100);
     }
 
     // Top percentage (tppercentage)
-    if ($applyPatti && $tppercentage > 0) {
+    if ($tppercentage > 0) {
         $adjustedAmount -= ($tppercentage * $adjustedAmount / 100);
     }
 
@@ -545,30 +601,11 @@ if (!empty($tbl_transactions)) {
         foreach ($numbers as $index => $number) {
             if (isset($amounts[$index])) {
                 $amount = $amounts[$index];
-                distributeAmount(
-                    $number,
-                    $amount,
-                    $table,
-                    $apply_commission,
-                    $apply_patti,
-                    $entry['dcomm'] ?? 0,
-                    $entry['dmcomm'] ?? 0,
-                    $entry['dhissa'] ?? 0,
-                    $entry['tppercentage'] ?? 0
-                );
+                distributeAmount($number, $amount, $table, $entry['dcomm'],$entry['dmcomm'], $entry['dhissa'], $entry['tppercentage']);
             }
         }
     }
 }
-
-// D adjustments are applied once to each final Jantri cell after all
-// transaction amounts have been distributed and combined.
-$dPercentage = isset($_GET['d_percentage']) && is_numeric($_GET['d_percentage'])
-    ? min(100, max(0, (float)$_GET['d_percentage']))
-    : 0;
-$dAmount = isset($_GET['d_amount']) && is_numeric($_GET['d_amount'])
-    ? max(0, (float)$_GET['d_amount'])
-    : 0;
 
 // Print the final table of distributed amounts
 //print_r($table); die;
@@ -850,8 +887,7 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
         }
         //echo '<pre>'; print_r($ntnumber); echo '</pre>'; die;
         ?>
-        <div class="jantri-table-wrap">
-        <table class="table table-bordered table-hover jantri-grid" style="
+        <table class="table table-bordered table-hover" style="
     line-height: 14px;
 ">
             <thead>
@@ -949,15 +985,7 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
                     // Output the number and its corresponding amount in a box
                     //echo "<td><strong>$i</strong><br>" . $table[$i] . "</td>";
                       // Check if the value exists in $table, otherwise default to 0
-                        $rawValue = isset($table[$i]) ? max(0, (float)$table[$i]) : 0;
-                        if ($dAmount > 0) {
-                            $rawValue = max(0, $rawValue - $dAmount);
-                        }
-                        if ($dPercentage > 0) {
-                            $rawValue -= ($rawValue * $dPercentage / 100);
-                        }
-                        // Match the requested buckets: 7.888 -> 5 and 8.6 -> 10.
-                        $value = round(floor($rawValue) / 5) * 5;
+                        $value = isset($table[$i]) ? $table[$i] : 0;
                      // Accumulate the row sum
                      $rowSum += $value;
     ?>
@@ -1004,7 +1032,6 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
 
             </tbody>
         </table>
-        </div>
         <?php /* //var_dump($tnumber); die; ?>
 <table class="table table-bordered table-hover">
    <tbody>
@@ -1126,9 +1153,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // hide button by default
     const btn = document.getElementById("btnFetch");
-    if (!btn) {
-        return;
-    }
     btn.style.display = "none";
 
     if (dateParam) {
