@@ -291,7 +291,19 @@ class Tbl_transactions_model extends CI_Model
 		//$this->db->join('tbl_trans_fromto', 'tbl_trans_fromto.master_id = tbl_master_transaction.id','FULL OUTER JOIN');	
 		//$this->db->where('tbl_master_transaction.shift_id', $pid);
 		$this->db->where('user_shift_timings.id', $pid);
-		$this->db->where('tbl_master_transaction.t_date', date('Y-m-d', strtotime($date)) . ' 00:00:00');
+		//$this->db->where('tbl_master_transaction.t_date', date('Y-m-d', strtotime($date)) . ' 00:00:00');
+		$selectedDate = date('Y-m-d', strtotime($date));
+$nextDate = date('Y-m-d', strtotime($selectedDate . ' +1 day'));
+
+$this->db->where(
+    'tbl_master_transaction.t_date >=',
+    $selectedDate . ' 00:00:00'
+);
+
+$this->db->where(
+    'tbl_master_transaction.t_date <',
+    $nextDate . ' 00:00:00'
+);
 		$this->db->where('tbl_ledger.updated_by', $this->session->userid);
 		$this->db->order_by("tbl_master_transaction.id", "desc");
 		//$this->db->limit('10', '0');		
