@@ -124,8 +124,13 @@ function get_tbl_shift_usershift($id)
          return $result;
     }
     
-function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
+function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $time_column = 'master')
 {
+    $allowed_time_columns = array('master', 'data_entry_operator');
+    if (!in_array($time_column, $allowed_time_columns, true)) {
+        $time_column = 'master';
+    }
+
     $this->db->select('
         tbl_shift.id AS tbl_shift_id,
         tbl_shift.*,
@@ -155,30 +160,22 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
         FROM user_shift_timings AS latest_timing
         WHERE latest_timing.shift_id = user_shift_timings.shift_id
           AND latest_timing.updated_by = user_shift_timings.updated_by
+          AND latest_timing.open_date = user_shift_timings.open_date
           AND latest_timing.open_date >= '.$this->db->escape($fromdate).'
           AND latest_timing.open_date <= '.$this->db->escape($todate).'
           AND latest_timing.is_active = 1
     )';
     $this->db->where($latestTimingSql, null, false);
 
-    // 1. Sort by date
-    $this->db->order_by(
-        'user_shift_timings.open_date',
-        'ASC'
-    );
+    // Sort by the same role-specific publish/cutoff time used by the transaction page.
+    $publishTimeSql = "COALESCE(
+        STR_TO_DATE(user_shift_timings.$time_column, '%h:%i %p'),
+        STR_TO_DATE(user_shift_timings.$time_column, '%H:%i:%s'),
+        STR_TO_DATE(user_shift_timings.$time_column, '%H:%i')
+    )";
 
-    // 2. PM first, AM always last
-    $this->db->order_by("
-        CASE
-            WHEN UPPER(user_shift_timings.master) LIKE '%AM' THEN 1
-            ELSE 0
-        END
-    ", 'ASC', false);
-
-    // 3. Sort actual time chronologically
-    $this->db->order_by("
-        STR_TO_DATE(user_shift_timings.master, '%h:%i %p')
-    ", 'ASC', false);
+    $this->db->order_by("TIMESTAMP(user_shift_timings.open_date, TIME($publishTimeSql))", 'ASC', false);
+    $this->db->order_by('user_shift_timings.id', 'ASC');
 
     $result = $this->db->get()->result_array();
 

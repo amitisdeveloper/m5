@@ -64,7 +64,7 @@ class Tbl_transactions extends CI_Controller
 			$newTimestamp = time() + (24 * 60 * 60); // Add 12 hours to the current time (12 hours * 60 minutes * 60 seconds)
 			$todate = date('Y-m-d', $newTimestamp);
 			$fromdate = date('Y-m-d', time());
-			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans($tbl_staff['updated_by'],$fromdate,$todate);
+			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans($tbl_staff['updated_by'],$fromdate,$todate,'data_entry_operator');
 		}
 		else{
 		$data['party'] = $this->Tbl_ledger_model->get_all_tbl_ledger_admin();
@@ -72,7 +72,7 @@ class Tbl_transactions extends CI_Controller
 		$newTimestamp = time() + (24 * 60 * 60); // Add 12 hours to the current time (12 hours * 60 minutes * 60 seconds)
 		$todate = date('Y-m-d', $newTimestamp);
 		$fromdate = date('Y-m-d', time());
-		$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans($this->session->userdata['id'],$fromdate,$todate);
+		$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans($this->session->userdata['id'],$fromdate,$todate,'master');
 		}
 		//echo '<pre>'; print_r($data['shifts']); echo '</pre>';die;	
 		//$data['randomf4'] = $this->Tbl_shift_model->get_all_tbl_shift();
