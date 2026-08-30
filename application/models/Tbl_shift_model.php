@@ -568,8 +568,6 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
             if (!empty($existing)) {
                 $this->db->where('id', $existing['id']);
                 $this->db->update('user_shift_timings', $row_params);
-            } else {
-                $this->db->insert('user_shift_timings', $row_params);
             }
         }
         $this->db->trans_complete();
@@ -635,11 +633,11 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
             ->result_array();
 
         if (empty($source_timings) || empty($masters)) {
-            return array('success' => false, 'created' => 0, 'updated' => 0);
+            return array('success' => false, 'updated' => 0, 'skipped' => 0);
         }
 
-        $created = 0;
         $updated = 0;
+        $skipped = 0;
 
         $this->db->trans_start();
         foreach ($source_timings as $source) {
@@ -672,8 +670,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
                     $this->db->update('user_shift_timings', $row_params);
                     $updated++;
                 } else {
-                    $this->db->insert('user_shift_timings', $row_params);
-                    $created++;
+                    $skipped++;
                 }
             }
         }
@@ -681,8 +678,8 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
 
         return array(
             'success' => $this->db->trans_status(),
-            'created' => $created,
             'updated' => $updated,
+            'skipped' => $skipped,
         );
     }
     
