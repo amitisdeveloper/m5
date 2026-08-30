@@ -24,14 +24,23 @@ BEGIN
      AND shifts.is_active = 1
     SET
         target.master_id = masters.id,
+        target.open_date = CASE
+            WHEN LOWER(TRIM(shifts.shift_name)) = 'disawer' THEN DATE_ADD(target_date, INTERVAL 1 DAY)
+            ELSE target_date
+        END,
         target.master = shifts.super_admin,
         target.app_time = COALESCE(shifts.app_time, ''),
         target.data_entry_operator = COALESCE(shifts.data_entry_operator, ''),
         target.is_active = shifts.is_active
-    WHERE target.open_date = CASE
-            WHEN LOWER(TRIM(shifts.shift_name)) = 'disawer' THEN DATE_ADD(target_date, INTERVAL 1 DAY)
-            ELSE target_date
-        END;
+    WHERE target.id = (
+        SELECT latest_id
+        FROM (
+            SELECT MAX(latest_target.id) AS latest_id
+            FROM user_shift_timings AS latest_target
+            WHERE latest_target.shift_id = target.shift_id
+              AND latest_target.updated_by = target.updated_by
+        ) AS latest_target_row
+    );
 END//
 
 DELIMITER ;
