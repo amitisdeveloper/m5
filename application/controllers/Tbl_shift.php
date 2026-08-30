@@ -256,8 +256,54 @@ class Tbl_shift extends CI_Controller{
             show_error('This action can only be run from CLI.', 403);
         }
 
-        $result = $this->Tbl_shift_model->sync_all_master_shift_timings_for_date($date);
-        echo json_encode($result).PHP_EOL;
+        $started_at = date('Y-m-d H:i:s');
+        $this->write_shift_sync_cron_log('START', array(
+            'started_at' => $started_at,
+            'date_arg' => $date,
+            'argv' => isset($_SERVER['argv']) ? $_SERVER['argv'] : array(),
+            'cwd' => getcwd(),
+        ));
+
+        try {
+            $result = $this->Tbl_shift_model->sync_all_master_shift_timings_for_date($date);
+            $db_error = $this->db->error();
+            if (!empty($db_error['code'])) {
+                $result['db_error'] = $db_error;
+            }
+
+            $result['started_at'] = $started_at;
+            $result['finished_at'] = date('Y-m-d H:i:s');
+            $this->write_shift_sync_cron_log('FINISH', $result);
+            echo json_encode($result).PHP_EOL;
+        } catch (Throwable $e) {
+            $error = array(
+                'success' => false,
+                'started_at' => $started_at,
+                'finished_at' => date('Y-m-d H:i:s'),
+                'error_class' => get_class($e),
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+                'db_error' => $this->db->error(),
+            );
+
+            $this->write_shift_sync_cron_log('ERROR', $error);
+            echo json_encode($error).PHP_EOL;
+            exit(1);
+        }
+    }
+
+    private function write_shift_sync_cron_log($status, $context = array())
+    {
+        $log_dir = APPPATH.'logs';
+        if (!is_dir($log_dir)) {
+            mkdir($log_dir, 0755, true);
+        }
+
+        $line = '['.date('Y-m-d H:i:s').'] shift_sync_cron '.$status.' '.json_encode($context).PHP_EOL;
+        file_put_contents($log_dir.'/shift_sync_cron-'.date('Y-m-d').'.log', $line, FILE_APPEND | LOCK_EX);
+        log_message($status === 'ERROR' ? 'error' : 'info', trim($line));
     }
 
     /*

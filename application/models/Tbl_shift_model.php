@@ -444,6 +444,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
      */
     function insert_tbl_shift_timing($params)
     {
+        $params = $this->normalize_shift_timing_params($params);
         $this->db->insert('user_shift_timings',$params);
         return $this->db->insert_id();
     }
@@ -457,6 +458,35 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
         $param['data_entry_operator'] = date("H:i:s", strtotime($params['data_entry_operator']));
         $this->db->insert('user_shift_timings',$param);
         return $this->db->insert_id();
+    }
+
+    private function normalize_shift_timing_params(array $params)
+    {
+        $master_time = isset($params['master']) ? trim((string) $params['master']) : '';
+        $app_time = isset($params['app_time']) ? trim((string) $params['app_time']) : '';
+        $data_entry_operator = isset($params['data_entry_operator']) ? trim((string) $params['data_entry_operator']) : '';
+
+        // Legacy shift forms do not always submit every timing column.
+        // Reuse the available timing value so inserts never violate NOT NULL.
+        if ($app_time === '') {
+            $app_time = ($master_time !== '') ? $master_time : $data_entry_operator;
+        }
+
+        if ($data_entry_operator === '') {
+            $data_entry_operator = ($app_time !== '') ? $app_time : $master_time;
+        }
+
+        if ($master_time !== '') {
+            $params['master'] = $master_time;
+        }
+        if ($app_time !== '') {
+            $params['app_time'] = $app_time;
+        }
+        if ($data_entry_operator !== '') {
+            $params['data_entry_operator'] = $data_entry_operator;
+        }
+
+        return $params;
     }
     
     /*
@@ -504,6 +534,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
             'data_entry_operator' => isset($params['data_entry_operator']) ? $params['data_entry_operator'] : $source['data_entry_operator'],
             'is_active' => isset($params['is_active']) ? $params['is_active'] : $source['is_active'],
         );
+        $sync_params = $this->normalize_shift_timing_params($sync_params);
 
         $masters = $this->db
             ->select('id')
@@ -523,6 +554,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
             $row_params = $sync_params;
             $row_params['master_id'] = $master_id;
             $row_params['updated_by'] = $master_id;
+            $row_params = $this->normalize_shift_timing_params($row_params);
 
             $existing = $this->db
                 ->select('id')
@@ -624,6 +656,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
                     'is_active' => $source['is_active'],
                     'updated_by' => $master_id,
                 );
+                $row_params = $this->normalize_shift_timing_params($row_params);
 
                 $existing = $this->db
                     ->select('id')
