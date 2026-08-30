@@ -60,7 +60,7 @@ $master_balance = get_master_coin_balance($master_id);
                     </span>
                 <?php endif; ?>
         <div style="float:right">
-                <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
                   <i class="fa fa-users"></i> <?= $this->session->userdata['first_name'] ?>
                 </a>
                 <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
@@ -88,7 +88,7 @@ $master_balance = get_master_coin_balance($master_id);
                 <a class="nav-link" href="<?php echo base_url(); ?>dashboard">Dashboard</a>
             </li>
             <li class="menu-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="featuresDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="featuresDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Master
                 </a>
                 <div class="dropdown-menu" aria-labelledby="featuresDropdown">
@@ -99,7 +99,7 @@ $master_balance = get_master_coin_balance($master_id);
                 </div>
             </li>
             <li class="menu-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="componentsDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="componentsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Transactions
                 </a>
                 <div class="dropdown-menu" aria-labelledby="componentsDropdown">
@@ -114,7 +114,7 @@ $master_balance = get_master_coin_balance($master_id);
                 <a class="nav-link" href="#">Tables</a>
             </li> -->
             <li class="menu-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="chartsDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="chartsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Jantri
                 </a>
                 <div class="dropdown-menu" aria-labelledby="chartsDropdown">
@@ -126,7 +126,7 @@ $master_balance = get_master_coin_balance($master_id);
                 <a class="nav-link" href="#">Maps</a>
             </li> -->
             <li class="menu-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="pagesDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" id="pagesDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Results
                 </a>
                 <div class="dropdown-menu" aria-labelledby="pagesDropdown">
@@ -387,6 +387,26 @@ $master_balance = get_master_coin_balance($master_id);
   <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
   <script>
+    $(document).on('click', '.top_nav .user-profile.dropdown-toggle', function(e) {
+      if ($.fn.dropdown) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+      var $menu = $(this).next('.dropdown-menu');
+      $('.top_nav .dropdown-menu').not($menu).removeClass('show');
+      $menu.toggleClass('show');
+      $(this).attr('aria-expanded', $menu.hasClass('show') ? 'true' : 'false');
+    });
+
+    $(document).on('click', function(e) {
+      if ($(e.target).closest('.top_nav .dropdown').length === 0) {
+        $('.top_nav .dropdown-menu').removeClass('show');
+        $('.top_nav .user-profile.dropdown-toggle').attr('aria-expanded', 'false');
+      }
+    });
+
     function navigate(origin, sens) {
       var inputs = $("input");
       var index = inputs.index(origin);
