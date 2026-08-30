@@ -83,6 +83,8 @@ class Tbl_jantri extends CI_Controller
 			//echo '<pre>'; print_r($_GET); echo '</pre>';	die;
 			$pid = $_GET['pid'];
 			$date = $_GET['date'];
+			$shiftRow = $this->Tbl_shift_model->get_tbl_shift_usershift($pid);
+			$baseShiftId = !empty($shiftRow['shift_id']) ? $shiftRow['shift_id'] : $pid;
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
 			//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
 			if($jandata){
@@ -114,23 +116,29 @@ class Tbl_jantri extends CI_Controller
 			if($currtimestamp < $dbtimestamp){
 				$data['sendjantri'] = 1;	
 			} 
-			else{
-				$data['sendjantri'] = 0;
-			}
+				else{
+					$data['sendjantri'] = 0;
+				}
 
 		}
-			//$data['sendjantri'] = 
-			 if($this->session->userdata['id'] != '1'){
-			$data['tbl_transactions'] = $this->Tbl_transactions_model->get_custom_transactions_total_shift_master($pid, $date);
-			} 	
+			//$data['sendjantri'] =
+			if($this->session->userdata['id'] != '1'){
+				$data['tbl_transactions'] = $this->Tbl_transactions_model->get_custom_transactions_total_shift_master($pid, $date);
+				if (empty($data['tbl_transactions'])) {
+					$data['tbl_transactions'] = $this->Tbl_transactions_model->get_custom_transactions_total_shift($baseShiftId, $date);
+				}
+			}
 			else{
 				//$data['tbl_transactions'] = $this->Tbl_transactions_model->get_custom_transactions_total_shift_admin($pid, $date);
 				//$data['tbl_transactions'] = $this->Tbl_transactions_model->view_transaction_filter($pid, $date);
 				$data['todate'] = $date;
-			$data['shift_name'] = $pid;
-			$data['created_by'] = '1';
-			//to correct admin jantri bringh data in same format as non admin 
+				$data['shift_name'] = $baseShiftId;
+				$data['created_by'] = '1';
+				//to correct admin jantri bringh data in same format as non admin
 				$data['tbl_transactions'] = $this->Tbl_transactions_model->view_transaction_filter_admin($data);
+				if (empty($data['tbl_transactions'])) {
+					$data['tbl_transactions'] = $this->Tbl_transactions_model->get_custom_transactions_total_shift($baseShiftId, $date);
+				}
 			}
 			
 		}
