@@ -83,6 +83,9 @@ class Tbl_shift extends CI_Controller{
                 
             );
             $tbl_shift_masterid = $this->Tbl_shift_model->insert_tbl_shift_timing($master_params); 
+            if($tbl_shift_masterid){
+                $this->Tbl_shift_model->sync_shift_timing_to_all_masters($tbl_shift_masterid,$master_params);
+            }
             if($tbl_shift_id){
                redirect('/shift_master');
             }
@@ -196,6 +199,9 @@ class Tbl_shift extends CI_Controller{
             );
             $tbl_shift_masterid = $this->Tbl_shift_model->insert_tbl_shift_timing($master_params);   
             if($tbl_shift_masterid){
+                $this->Tbl_shift_model->sync_shift_timing_to_all_masters($tbl_shift_masterid,$master_params);
+            }
+            if($tbl_shift_masterid){
                redirect('/shift_master_admin');
             }
         }
@@ -242,6 +248,16 @@ class Tbl_shift extends CI_Controller{
             echo "Failed to set access time";
         }
         
+    }
+
+    function sync_all_master_shift_timings($date = null)
+    {
+        if (!$this->input->is_cli_request()) {
+            show_error('This action can only be run from CLI.', 403);
+        }
+
+        $result = $this->Tbl_shift_model->sync_all_master_shift_timings_for_date($date);
+        echo json_encode($result).PHP_EOL;
     }
 
     /*
@@ -302,6 +318,7 @@ class Tbl_shift extends CI_Controller{
                        'open_date' => date('Y-m-d',strtotime($this->input->post('open_date'))),
                        'master' => $this->input->post('master'),
                        'app_time' => $this->input->post('app_time'),
+                       'data_entry_operator' => $this->input->post('data_entry_operator'),
                        'updated_by' => $this->session->userdata['id'],
                        'master_id' => $this->session->userdata['id'],
                        'is_active' => '1'
@@ -311,6 +328,12 @@ class Tbl_shift extends CI_Controller{
                 }
                 else {
                    $tbl_shift_masterid = $this->Tbl_shift_model->update_tbl_shift_timing($id,$master_params); 
+                   if($tbl_shift_masterid){
+                       $tbl_shift_masterid = $id;
+                   }
+                }
+                if($tbl_shift_masterid){
+                    $this->Tbl_shift_model->sync_shift_timing_to_all_masters($tbl_shift_masterid,$master_params);
                 }
                 
                 redirect('/shift_master');
@@ -379,11 +402,16 @@ class Tbl_shift extends CI_Controller{
                         'shift_id' => $tbl_shift_id,
                         'open_date' => date('Y-m-d',strtotime($this->input->post('open_date'))),
                         'master' => $this->input->post('super_admin'),
+                        'app_time' => $this->input->post('app_time'),
+                        'data_entry_operator' => $this->input->post('data_entry_operator'),
                         'updated_by' => $this->session->userdata['id'],
                         'is_active' => '1'
                         
-                    );
-                    $tbl_shift_masterid = $this->Tbl_shift_model->insert_tbl_shift_timing($master_params); 
+                        );
+                        $tbl_shift_masterid = $this->Tbl_shift_model->insert_tbl_shift_timing($master_params);
+                        if($tbl_shift_masterid){
+                            $this->Tbl_shift_model->sync_shift_timing_to_all_masters($tbl_shift_masterid,$master_params);
+                        }
                 }
                 else{ //print_r($_POST); die;
                     //$this->Tbl_shift_model->update_tbl_shift_timing($data['tbl_shift_time']['id'],$master_params);        
@@ -416,6 +444,12 @@ class Tbl_shift extends CI_Controller{
                      }
                      else{
                         $tbl_shift_masterid = $this->Tbl_shift_model->update_tbl_shift_timing_by_shiftid($usershifttiming['id'],$master_params); 
+                        if($tbl_shift_masterid){
+                            $tbl_shift_masterid = $usershifttiming['id'];
+                        }
+                     }
+                     if($tbl_shift_masterid){
+                        $this->Tbl_shift_model->sync_shift_timing_to_all_masters($tbl_shift_masterid,$master_params);
                      }
                     
                 }  

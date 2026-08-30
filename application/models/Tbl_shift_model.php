@@ -487,6 +487,171 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
         return $this->db->update('user_shift_timings',$params);
          //echo $this->db->last_query(); die; 
     }
+
+    function sync_shift_timing_to_all_masters($source_timing_id, $params = array())
+    {
+        $source = $this->db->get_where('user_shift_timings', array('id' => $source_timing_id))->row_array();
+        if (empty($source) || empty($source['shift_id'])) {
+            return false;
+        }
+
+        $open_date = !empty($params['open_date']) ? $params['open_date'] : $source['open_date'];
+        $sync_params = array(
+            'shift_id' => $source['shift_id'],
+            'open_date' => $open_date,
+            'master' => isset($params['master']) ? $params['master'] : $source['master'],
+            'app_time' => isset($params['app_time']) ? $params['app_time'] : $source['app_time'],
+            'data_entry_operator' => isset($params['data_entry_operator']) ? $params['data_entry_operator'] : $source['data_entry_operator'],
+            'is_active' => isset($params['is_active']) ? $params['is_active'] : $source['is_active'],
+        );
+
+        $masters = $this->db
+            ->select('id')
+            ->from('tbl_ledger')
+            ->where('is_master', '1')
+            ->where('status', 1)
+            ->get()
+            ->result_array();
+
+        if (empty($masters)) {
+            return false;
+        }
+
+        $this->db->trans_start();
+        foreach ($masters as $master) {
+            $master_id = $master['id'];
+            $row_params = $sync_params;
+            $row_params['master_id'] = $master_id;
+            $row_params['updated_by'] = $master_id;
+
+            $existing = $this->db
+                ->select('id')
+                ->from('user_shift_timings')
+                ->where('shift_id', $sync_params['shift_id'])
+                ->where('open_date', $sync_params['open_date'])
+                ->where('updated_by', $master_id)
+                ->get()
+                ->row_array();
+
+            if (!empty($existing)) {
+                $this->db->where('id', $existing['id']);
+                $this->db->update('user_shift_timings', $row_params);
+            } else {
+                $this->db->insert('user_shift_timings', $row_params);
+            }
+        }
+        $this->db->trans_complete();
+
+        return $this->db->trans_status();
+    }
+
+    function sync_all_master_shift_timings_for_date($open_date = null)
+    {
+        $open_date = $open_date ? date('Y-m-d', strtotime($open_date)) : date('Y-m-d');
+        $next_open_date = date('Y-m-d', strtotime($open_date.' +1 day'));
+
+        $source_timings = $this->db
+            ->select('user_shift_timings.shift_id,user_shift_timings.open_date,user_shift_timings.master,user_shift_timings.app_time,user_shift_timings.data_entry_operator,user_shift_timings.is_active,tbl_shift.shift_name')
+            ->from('user_shift_timings')
+            ->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id')
+            ->where('user_shift_timings.updated_by', 1)
+            ->where("user_shift_timings.open_date = CASE
+                WHEN LOWER(TRIM(tbl_shift.shift_name)) = 'disawer' THEN ".$this->db->escape($next_open_date)."
+                ELSE ".$this->db->escape($open_date)."
+            END", null, false)
+            ->where('tbl_shift.updated_by', '1')
+            ->where('tbl_shift.is_active', 1)
+            ->where('user_shift_timings.id = (
+                SELECT MAX(latest_source.id)
+                FROM user_shift_timings AS latest_source
+                WHERE latest_source.shift_id = user_shift_timings.shift_id
+                  AND latest_source.updated_by = 1
+                  AND latest_source.open_date = user_shift_timings.open_date
+            )', null, false)
+            ->get()
+            ->result_array();
+
+        if (empty($source_timings)) {
+            $base_shifts = $this->db
+                ->select('id AS shift_id, shift_name, super_admin AS master, app_time, data_entry_operator, is_active')
+                ->from('tbl_shift')
+                ->where('updated_by', '1')
+                ->where('is_active', 1)
+                ->get()
+                ->result_array();
+
+            foreach ($base_shifts as $shift) {
+                $shift_open_date = (strtolower(trim($shift['shift_name'])) == 'disawer') ? $next_open_date : $open_date;
+                $source_timings[] = array(
+                    'shift_id' => $shift['shift_id'],
+                    'shift_name' => $shift['shift_name'],
+                    'open_date' => $shift_open_date,
+                    'master' => $shift['master'],
+                    'app_time' => $shift['app_time'],
+                    'data_entry_operator' => $shift['data_entry_operator'],
+                    'is_active' => $shift['is_active'],
+                );
+            }
+        }
+
+        $masters = $this->db
+            ->select('id')
+            ->from('tbl_ledger')
+            ->where('is_master', '1')
+            ->where('status', 1)
+            ->get()
+            ->result_array();
+
+        if (empty($source_timings) || empty($masters)) {
+            return array('success' => false, 'created' => 0, 'updated' => 0);
+        }
+
+        $created = 0;
+        $updated = 0;
+
+        $this->db->trans_start();
+        foreach ($source_timings as $source) {
+            $shift_open_date = $source['open_date'];
+            foreach ($masters as $master) {
+                $master_id = $master['id'];
+                $row_params = array(
+                    'master_id' => $master_id,
+                    'shift_id' => $source['shift_id'],
+                    'open_date' => $shift_open_date,
+                    'master' => $source['master'],
+                    'app_time' => $source['app_time'],
+                    'data_entry_operator' => $source['data_entry_operator'],
+                    'is_active' => $source['is_active'],
+                    'updated_by' => $master_id,
+                );
+
+                $existing = $this->db
+                    ->select('id')
+                    ->from('user_shift_timings')
+                    ->where('shift_id', $source['shift_id'])
+                    ->where('open_date', $shift_open_date)
+                    ->where('updated_by', $master_id)
+                    ->get()
+                    ->row_array();
+
+                if (!empty($existing)) {
+                    $this->db->where('id', $existing['id']);
+                    $this->db->update('user_shift_timings', $row_params);
+                    $updated++;
+                } else {
+                    $this->db->insert('user_shift_timings', $row_params);
+                    $created++;
+                }
+            }
+        }
+        $this->db->trans_complete();
+
+        return array(
+            'success' => $this->db->trans_status(),
+            'created' => $created,
+            'updated' => $updated,
+        );
+    }
     
     /*
      * function to delete tbl_shift
