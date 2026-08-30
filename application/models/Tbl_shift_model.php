@@ -256,7 +256,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
               ELSE '.$this->db->escape($today).'
           END
      )';
-     $this->db->join('user_shift_timings', $joinCondition, 'left');
+     $this->db->join('user_shift_timings', $joinCondition, 'left', false);
      $this->db->where('tbl_shift.updated_by', $tbl_shift_updated_by);
         $query = $this->db->get();
         // echo $this->db->last_query(); die;
