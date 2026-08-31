@@ -206,8 +206,8 @@
                 <?php if($t['id']) { ?>
                     <a href="<?php echo site_url('tbl_shift/edit/'.$t['id']) ?>" class="btn btn-info btn-xs mr-5" >Edit</a>
                     <a href="<?php echo site_url('tbl_shift/change_status/'.$t['id']) ?>" 
-   class="btn btn-xs <?php echo ($t['is_active'] == 1) ? 'btn-success' : 'btn-danger'; ?>" >
-   <?php echo ($t['is_active'] == 1) ? 'Click To Deactivate' : 'Inactive'; ?>
+   class="btn btn-xs <?php echo ($t['is_active'] == 1) ? 'btn-warning' : 'btn-success'; ?>" >
+   <?php echo ($t['is_active'] == 1) ? 'Deactivate Shift' : 'Activate Shift'; ?>
 </a>
                <?php }
                else{
@@ -259,8 +259,8 @@
             <?php if($t['id']) { ?>
                 <!-- <a href="<?php echo site_url('tbl_shift/edit/'.$t['id']) ?>" class="btn btn-info btn-xs">Edit</a> -->
                 <a href="<?php echo site_url('tbl_shift/change_status/'.$t['id']) ?>" 
-class="btn btn-xs <?php echo ($t['is_active'] == 1) ? 'btn-success' : 'btn-danger mr-4'; ?>">
-<?php echo ($t['is_active'] == 1) ? 'Active' : 'Click To active'; ?>
+class="btn btn-xs <?php echo ($t['is_active'] == 1) ? 'btn-warning' : 'btn-success mr-4'; ?>">
+<?php echo ($t['is_active'] == 1) ? 'Deactivate Shift' : 'Activate Shift'; ?>
 </a>
            <?php }
            else{
