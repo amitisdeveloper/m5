@@ -246,16 +246,17 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
          user_shift_timings.updated_date
      ');
      $this->db->from('tbl_shift');
-     $joinCondition = 'user_shift_timings.id = (
-        SELECT MAX(latest_timing.id)
-        FROM user_shift_timings AS latest_timing
-        WHERE latest_timing.shift_id = tbl_shift.id
-          AND latest_timing.updated_by = '.$this->db->escape($user_shift_updated_by).'
-          AND latest_timing.open_date = CASE
-              WHEN LOWER(TRIM(tbl_shift.shift_name)) = "disawer" THEN '.$this->db->escape($tomorrow).'
-              ELSE '.$this->db->escape($today).'
-          END
-     )';
+      $specialShiftNameSql = $this->special_shift_name_sql('tbl_shift');
+      $joinCondition = 'user_shift_timings.id = (
+         SELECT MAX(latest_timing.id)
+         FROM user_shift_timings AS latest_timing
+         WHERE latest_timing.shift_id = tbl_shift.id
+           AND latest_timing.updated_by = '.$this->db->escape($user_shift_updated_by).'
+           AND latest_timing.open_date = CASE
+               WHEN '.$specialShiftNameSql.' THEN '.$this->db->escape($tomorrow).'
+               ELSE '.$this->db->escape($today).'
+           END
+      )';
      $this->db->join('user_shift_timings', $joinCondition, 'left', false);
      $this->db->where('tbl_shift.updated_by', $tbl_shift_updated_by);
         $query = $this->db->get();
@@ -605,7 +606,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
             ->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id')
             ->where('user_shift_timings.updated_by', 1)
             ->where("user_shift_timings.open_date = CASE
-                WHEN LOWER(TRIM(tbl_shift.shift_name)) = 'disawer' THEN ".$this->db->escape($next_open_date)."
+                WHEN ".$this->special_shift_name_sql('tbl_shift')." THEN ".$this->db->escape($next_open_date)."
                 ELSE ".$this->db->escape($open_date)."
             END", null, false)
             ->where('tbl_shift.updated_by', '1')
@@ -630,7 +631,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
                 ->result_array();
 
             foreach ($base_shifts as $shift) {
-                $shift_open_date = (strtolower(trim($shift['shift_name'])) == 'disawer') ? $next_open_date : $open_date;
+                $shift_open_date = $this->is_special_shift_name($shift['shift_name']) ? $next_open_date : $open_date;
                 $source_timings[] = array(
                     'shift_id' => $shift['shift_id'],
                     'shift_name' => $shift['shift_name'],
@@ -705,6 +706,21 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
             'updated' => $updated,
             'skipped' => $skipped,
         );
+    }
+
+    private function is_special_shift_name($shift_name)
+    {
+        $normalized = strtolower(trim((string) $shift_name));
+        $normalized = str_replace(array(' ', '-'), '', $normalized);
+
+        // The production data uses inconsistent spellings for the same shift.
+        // Keep all known variants on the special tomorrow-date branch.
+        return in_array($normalized, array('disawar', 'disawer', 'diswar'), true);
+    }
+
+    private function special_shift_name_sql($table_alias)
+    {
+        return "LOWER(REPLACE(REPLACE(TRIM({$table_alias}.shift_name), ' ', ''), '-', '')) IN ('disawar', 'disawer', 'diswar')";
     }
     
     /*
