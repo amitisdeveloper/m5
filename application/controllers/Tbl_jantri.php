@@ -87,6 +87,14 @@ class Tbl_jantri extends CI_Controller
 			$selectedDate = date('Y-m-d', strtotime($date));
 			$shiftRow = $this->Tbl_shift_model->get_tbl_shift_usershift($pid);
 			$baseShiftId = !empty($shiftRow['shift_id']) ? $shiftRow['shift_id'] : $pid;
+			$resolvedTiming = $this->Tbl_shift_model->get_cutjantri_timing_for_shift(
+				$this->session->userdata['id'],
+				$baseShiftId,
+				$date
+			);
+			if (!empty($resolvedTiming['id'])) {
+				$pid = $resolvedTiming['id'];
+			}
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
 			//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
 			if($jandata){
@@ -147,18 +155,19 @@ class Tbl_jantri extends CI_Controller
 		// Use the selected business date so historical cut-jantri pages can
 		// resolve the same timing row that was active when the transactions were booked.
 		if ($this->session->userdata['id'] != '1') {
-			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans(
+			$data['shifts'] = $this->Tbl_shift_model->get_cutjantri_shifts_for_date(
 				$this->session->userdata['id'],
 				$selectedDate,
-				$selectedDate
+				$useNewView ? 'data_entry_operator' : 'master'
 			);
 		} else {
-			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans(
+			$data['shifts'] = $this->Tbl_shift_model->get_cutjantri_shifts_for_date(
 				1,
 				$selectedDate,
-				$selectedDate
+				$useNewView ? 'data_entry_operator' : 'master'
 			);
 		}
+		$data['selected_shift_id'] = $pid;
 		$tbl_ledger_elements = $this->Tbl_ledger_model->get_tbl_ledger($this->session->userdata['id']);
 		$data['ledger'] = $tbl_ledger_elements;
 		//echo '<pre>'; print_r($jandata); echo '</pre>'; die;

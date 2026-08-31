@@ -364,7 +364,7 @@
                     }
                 }
 
-                $selected_shift_id = isset($_GET['pid']) ? $_GET['pid'] : $nearest_shift_id;
+                $selected_shift_id = isset($selected_shift_id) ? $selected_shift_id : (isset($_GET['pid']) ? $_GET['pid'] : $nearest_shift_id);
                 ?>
                 <select name="pid" id="shift" class="form-control" required>
                     <option value="">Choose option</option>

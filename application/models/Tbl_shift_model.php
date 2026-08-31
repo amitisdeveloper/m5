@@ -124,7 +124,7 @@ function get_tbl_shift_usershift($id)
          return $result;
     }
     
-function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $time_column = 'master')
+    function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $time_column = 'master')
 {
     $allowed_time_columns = array('master', 'data_entry_operator');
     if (!in_array($time_column, $allowed_time_columns, true)) {
@@ -185,6 +185,82 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
 
     return $result;
 }
+
+    function get_cutjantri_shifts_for_date($updated_by, $date, $time_column = 'master')
+    {
+        $allowed_time_columns = array('master', 'data_entry_operator');
+        if (!in_array($time_column, $allowed_time_columns, true)) {
+            $time_column = 'master';
+        }
+
+        $selected_date = date('Y-m-d', strtotime($date));
+        $next_date = date('Y-m-d', strtotime($selected_date.' +1 day'));
+
+        $this->db->select('
+            tbl_shift.id AS tbl_shift_id,
+            tbl_shift.*,
+            user_shift_timings.id AS user_shift_timing_id,
+            user_shift_timings.*,
+            tbl_shift.open_date AS tbl_shift_open_date,
+            user_shift_timings.open_date AS user_shift_open_date
+        ');
+        $this->db->from('user_shift_timings');
+        $this->db->join('tbl_shift', 'user_shift_timings.shift_id = tbl_shift.id', 'left');
+        $this->db->where('user_shift_timings.updated_by', $updated_by);
+        $this->db->where('user_shift_timings.is_active', 1);
+        $this->db->group_start();
+        $this->db->where('user_shift_timings.open_date', $selected_date);
+        $this->db->group_start();
+        $this->db->where('user_shift_timings.open_date', $next_date);
+        $this->db->where($this->special_shift_name_sql('tbl_shift'), null, false);
+        $this->db->group_end();
+        $this->db->group_end();
+
+        $latestTimingSql = 'user_shift_timings.id = (
+            SELECT MAX(latest_timing.id)
+            FROM user_shift_timings AS latest_timing
+            WHERE latest_timing.shift_id = user_shift_timings.shift_id
+              AND latest_timing.updated_by = user_shift_timings.updated_by
+              AND latest_timing.open_date = user_shift_timings.open_date
+              AND latest_timing.is_active = 1
+        )';
+        $this->db->where($latestTimingSql, null, false);
+
+        $publishTimeSql = "COALESCE(
+            STR_TO_DATE(user_shift_timings.$time_column, '%h:%i %p'),
+            STR_TO_DATE(user_shift_timings.$time_column, '%H:%i:%s'),
+            STR_TO_DATE(user_shift_timings.$time_column, '%H:%i')
+        )";
+        $this->db->order_by("TIMESTAMP(user_shift_timings.open_date, TIME($publishTimeSql))", 'ASC', false);
+        $this->db->order_by('user_shift_timings.id', 'ASC');
+
+        return $this->db->get()->result_array();
+    }
+
+    function get_cutjantri_timing_for_shift($updated_by, $shift_id, $date)
+    {
+        $selected_date = date('Y-m-d', strtotime($date));
+        $next_date = date('Y-m-d', strtotime($selected_date.' +1 day'));
+
+        $this->db->select('user_shift_timings.*, tbl_shift.shift_name');
+        $this->db->from('user_shift_timings');
+        $this->db->join('tbl_shift', 'user_shift_timings.shift_id = tbl_shift.id', 'left');
+        $this->db->where('user_shift_timings.updated_by', $updated_by);
+        $this->db->where('user_shift_timings.shift_id', $shift_id);
+        $this->db->where('user_shift_timings.is_active', 1);
+        $this->db->group_start();
+        $this->db->where('user_shift_timings.open_date', $selected_date);
+        $this->db->group_start();
+        $this->db->where('user_shift_timings.open_date', $next_date);
+        $this->db->where($this->special_shift_name_sql('tbl_shift'), null, false);
+        $this->db->group_end();
+        $this->db->group_end();
+        $this->db->order_by('user_shift_timings.open_date', 'DESC');
+        $this->db->order_by('user_shift_timings.id', 'DESC');
+        $this->db->limit(1);
+
+        return $this->db->get()->row_array();
+    }
     function get_all_tbl_shift_master_cutjantri($params = array())
     {
 //print_r($this->session->userdata['userid']); die;
@@ -225,8 +301,6 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
 		// $query = $this->db->get();
          $tbl_shift_updated_by = 1;
          $user_shift_updated_by = $this->session->userdata['userid'];
-         $today = date('Y-m-d');
-         $tomorrow = date('Y-m-d', strtotime($today.' +1 day'));
          $this->db->select('
          tbl_shift.id AS tbl_shift_id,
          tbl_shift.shift_name,
@@ -246,19 +320,15 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate, $ti
          user_shift_timings.updated_date
      ');
      $this->db->from('tbl_shift');
-      $specialShiftNameSql = $this->special_shift_name_sql('tbl_shift');
       $joinCondition = 'user_shift_timings.id = (
          SELECT MAX(latest_timing.id)
          FROM user_shift_timings AS latest_timing
          WHERE latest_timing.shift_id = tbl_shift.id
            AND latest_timing.updated_by = '.$this->db->escape($user_shift_updated_by).'
-           AND latest_timing.open_date = CASE
-               WHEN '.$specialShiftNameSql.' THEN '.$this->db->escape($tomorrow).'
-               ELSE '.$this->db->escape($today).'
-           END
       )';
-     $this->db->join('user_shift_timings', $joinCondition, 'left', false);
-     $this->db->where('tbl_shift.updated_by', $tbl_shift_updated_by);
+      $this->db->join('user_shift_timings', $joinCondition, 'left', false);
+      $this->db->where('tbl_shift.updated_by', $tbl_shift_updated_by);
+      $this->db->order_by('tbl_shift.shift_name', 'ASC');
         $query = $this->db->get();
         // echo $this->db->last_query(); die;
 
