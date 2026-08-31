@@ -13,6 +13,7 @@ class Tbl_jantri extends CI_Controller
 		$this->load->model('Tbl_transactions_model');
 		$this->load->model('Tbl_shift_model');
 		$this->load->model('Tbl_ledger_model');
+		$this->load->model('Tbl_staff_model');
 		$this->load->library('session');
 		$this->load->helper('url');
 	}
@@ -155,20 +156,35 @@ class Tbl_jantri extends CI_Controller
 			}
 			
 		}
+		// Match the same ownership rules as the working transaction page.
+		$shiftOwnerId = $this->session->userdata['id'];
+		$timeColumn = 'master';
+		if ($this->session->userdata['role'] == 'Staff') {
+			$tbl_staff = $this->Tbl_staff_model->get_tbl_staff($this->session->userdata['id']);
+			if (!empty($tbl_staff['updated_by'])) {
+				$shiftOwnerId = $tbl_staff['updated_by'];
+			}
+			$timeColumn = 'data_entry_operator';
+		}
+
 		// Use the selected business date so historical cut-jantri pages can
 		// resolve the same timing row that was active when the transactions were booked.
-		if ($this->session->userdata['id'] != '1') {
-			$data['shifts'] = $this->Tbl_shift_model->get_cutjantri_shifts_for_date(
-				$this->session->userdata['id'],
+		$data['shifts'] = $this->Tbl_shift_model->get_cutjantri_shifts_for_date(
+			$shiftOwnerId,
+			$selectedDate,
+			$timeColumn
+		);
+		if (empty($data['shifts'])) {
+			$fallbackEndDate = date('Y-m-d', strtotime($selectedDate.' +1 day'));
+			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans(
+				$shiftOwnerId,
 				$selectedDate,
-				$useNewView ? 'data_entry_operator' : 'master'
+				$fallbackEndDate,
+				$timeColumn
 			);
-		} else {
-			$data['shifts'] = $this->Tbl_shift_model->get_cutjantri_shifts_for_date(
-				1,
-				$selectedDate,
-				$useNewView ? 'data_entry_operator' : 'master'
-			);
+		}
+		if (empty($data['shifts'])) {
+			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master($shiftOwnerId);
 		}
 		$data['selected_shift_id'] = $pid;
 		$tbl_ledger_elements = $this->Tbl_ledger_model->get_tbl_ledger($this->session->userdata['id']);
