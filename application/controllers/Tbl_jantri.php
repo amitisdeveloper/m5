@@ -77,12 +77,14 @@ class Tbl_jantri extends CI_Controller
 		date_default_timezone_set('Asia/Kolkata');
 		$data['tbl_transactions'] = [];
 		$data['sendjantri'] = 0;
+		$selectedDate = date('Y-m-d');
 		$data['apply_commission'] = $useNewView && $this->input->get('apply_commission') === '1';
 		$data['apply_patti'] = $useNewView && $this->input->get('apply_patti') === '1';
 		if (isset($_GET) && !(empty($_GET))) {
 			//echo '<pre>'; print_r($_GET); echo '</pre>';	die;
 			$pid = $_GET['pid'];
 			$date = $_GET['date'];
+			$selectedDate = date('Y-m-d', strtotime($date));
 			$shiftRow = $this->Tbl_shift_model->get_tbl_shift_usershift($pid);
 			$baseShiftId = !empty($shiftRow['shift_id']) ? $shiftRow['shift_id'] : $pid;
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
@@ -142,9 +144,21 @@ class Tbl_jantri extends CI_Controller
 			}
 			
 		}
-		// Use the same shift source as Party Jantri. The previous
-		// date-restricted query could leave the Cutting Jantri dropdown empty.
-		$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master($this->session->userdata['id']);
+		// Use the selected business date so historical cut-jantri pages can
+		// resolve the same timing row that was active when the transactions were booked.
+		if ($this->session->userdata['id'] != '1') {
+			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans(
+				$this->session->userdata['id'],
+				$selectedDate,
+				$selectedDate
+			);
+		} else {
+			$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master_for_trans(
+				1,
+				$selectedDate,
+				$selectedDate
+			);
+		}
 		$tbl_ledger_elements = $this->Tbl_ledger_model->get_tbl_ledger($this->session->userdata['id']);
 		$data['ledger'] = $tbl_ledger_elements;
 		//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
