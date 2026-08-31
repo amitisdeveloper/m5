@@ -1,8 +1,12 @@
 .DS_Store
 
+# Local CodeIgniter environment overrides (URLs, database credentials, etc.)
+application/config/development/
+application/config/database.php
 application/cache/*
 !application/cache/index.html
 !application/cache/.htaccess
+/application/config/database.php
 
 application/logs/*
 !application/logs/index.html
