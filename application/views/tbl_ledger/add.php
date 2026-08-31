@@ -344,10 +344,11 @@
                                           $end_date = date('Y-m-d');    // today's date
                                           $url = base_url("statement/$user_id?start_date=$start_date&end_date=$end_date");
                                           $commurl = base_url("master_comm_till_date/$user_id?start_date=$start_date&end_date=$end_date");
-                                    $share_message = "https://ubiquitous-dolphin-d5d38e.netlify.app\n\n"
-    . "*user- " . ($val['username'] ?? '') . " \n"
-    . "*Pass- " . ($val['password'] ?? '') . "\n\n"
-    . "Thanks - bull99exchange";
+                                    $share_message = "Welcome to bull99exchange\n"
+    . "App details\n"
+    . "https://ubiquitous-dolphin-d5d38e.netlify.app\n\n"
+    . "Username.... " . ($val['username'] ?? '') . "\n"
+    . "Password..... " . ($val['password'] ?? '');
 
 $share_url = 'https://wa.me/?text=' . rawurlencode($share_message);
                                     ?>
