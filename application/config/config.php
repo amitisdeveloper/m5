@@ -23,7 +23,7 @@ date_default_timezone_set('Asia/Kolkata');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'https://result9.bull99exch.com/';
+$config['base_url'] = 'https://master.bull99exch.com/';
 //$config['base_url'] = 'https://admin.555xch.live/';
 /*
 |--------------------------------------------------------------------------
