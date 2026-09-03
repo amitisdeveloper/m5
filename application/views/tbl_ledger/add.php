@@ -346,7 +346,7 @@
                                           $commurl = base_url("master_comm_till_date/$user_id?start_date=$start_date&end_date=$end_date");
                                     $share_message = "Welcome to bull99exchange\n"
     . "App details\n"
-    . "https://ubiquitous-dolphin-d5d38e.netlify.app\n\n"
+    . "https://app.bull99exch.com\n\n"
     . "Username.... " . ($val['username'] ?? '') . "\n"
     . "Password..... " . ($val['password'] ?? '');
 

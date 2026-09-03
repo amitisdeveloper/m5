@@ -78,7 +78,9 @@ class Tbl_jantri extends CI_Controller
 		$data['tbl_transactions'] = [];
 		$data['sendjantri'] = 0;
 		$data['apply_commission'] = $useNewView && $this->input->get('apply_commission') === '1';
-		$data['apply_patti'] = $useNewView && $this->input->get('apply_patti') === '1';
+		$pattiParam = $this->input->get('apply_patti');
+		$data['apply_patti'] = $useNewView && ($pattiParam === null || $pattiParam === '1');
+		$data['round_to_50'] = $useNewView && $this->input->get('round_to_50') === '1';
 		if (isset($_GET) && !(empty($_GET))) {
 			//echo '<pre>'; print_r($_GET); echo '</pre>';	die;
 			$pid = $_GET['pid'];
