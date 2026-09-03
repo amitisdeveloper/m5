@@ -253,6 +253,7 @@ class Tbl_shift extends CI_Controller{
         $data['post_shift_id'] = $id;
       // echo '<pre>'; print_r($data);die;
         $data['error'] = '';
+        $shift_record_id = !empty($data['tbl_shift_time']['shift_id']) ? $data['tbl_shift_time']['shift_id'] : $id;
         if(isset($_POST) && !empty($_POST))
         {
             $this->load->library('form_validation');
@@ -262,6 +263,7 @@ class Tbl_shift extends CI_Controller{
 			$this->form_validation->set_rules('shift_working_for','Shift Working For','max_length[255]');
 			$this->form_validation->set_rules('is_active','Is Active','integer');
 			$this->form_validation->set_rules('updated_by','Updated By','integer');
+			$this->form_validation->set_rules('app_result_time','App Result Time','required');
 		
 			if($this->input->method() == 'post')     
             { 
@@ -275,6 +277,9 @@ class Tbl_shift extends CI_Controller{
 					'data_entry_operator' => $this->input->post('data_entry_operator'),
 					'is_active' => '1',
 					'updated_by' => $this->session->userdata['id'],
+                );
+                $shift_params = array(
+                    'app_result_time' => date('H:i:s', strtotime($this->input->post('app_result_time')))
                 );
                 $master_params = array(
 					
@@ -312,6 +317,7 @@ class Tbl_shift extends CI_Controller{
                 else {
                    $tbl_shift_masterid = $this->Tbl_shift_model->update_tbl_shift_timing($id,$master_params); 
                 }
+                $this->Tbl_shift_model->update_tbl_shift($shift_record_id,$shift_params);
                 
                 redirect('/shift_master');
             
@@ -355,6 +361,7 @@ class Tbl_shift extends CI_Controller{
 					'shift_name' => $this->input->post('shift_name'),
 					'open_date' => date('Y-m-d',strtotime($this->input->post('open_date'))),
 					'super_admin' => $this->input->post('super_admin'),
+					'app_result_time' => date('H:i:s', strtotime($this->input->post('app_result_time'))),
 					'is_active' => ($this->input->post('is_active'))?$this->input->post('is_active'):1,
 					'updated_by' => $this->session->userdata['id'],
 					'updated_date' => $this->input->post('updated_date'),

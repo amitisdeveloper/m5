@@ -60,13 +60,10 @@ $master_balance = get_master_coin_balance($master_id);
                     </span>
                 <?php endif; ?>
         <div style="float:right">
-                <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="user-profile">
                   <i class="fa fa-users"></i> <?= $this->session->userdata['first_name'] ?>
-                </a>
-                <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
-
-                  <a class="dropdown-item" href="<?php echo base_url(); ?>logout"><i class="fa fa-sign-out pull-right"></i> Log Out</a>
-                </div>
+                </span>
+                <a class="logout-button" href="<?php echo base_url(); ?>logout"><i class="fa fa-sign-out"></i> Log Out</a>
                 </div>
               </li>
             </ul>
@@ -273,7 +270,31 @@ $master_balance = get_master_coin_balance($master_id);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); */
 }
 
-@media (max-width: 768px) {
+  .user-profile {
+    color: #5A738E !important;
+    font-weight: 400;
+  }
+
+  .logout-button {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: #d9534f;
+    color: #fff !important;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none !important;
+  }
+
+  .logout-button:hover,
+  .logout-button:focus {
+    background: #c9302c;
+    color: #fff !important;
+  }
+
+@media (max-width: 1100px) {
   /* Remove outer spacing on mobile */
   .navbar {
     padding: 0;
@@ -304,7 +325,7 @@ $master_balance = get_master_coin_balance($master_id);
     display: block;
   }
 
-  .dropdown-menu {
+  .navbar > .navbar-nav .menu-item .dropdown-menu {
     position: static;
     float: none;
     background-color: #2A3F54;
@@ -315,6 +336,7 @@ $master_balance = get_master_coin_balance($master_id);
     color: white !important;
     padding-left: 1.5rem;
   }
+
 }
 
     </style>

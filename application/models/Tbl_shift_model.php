@@ -80,7 +80,7 @@ function get_tbl_shift_usershift($id)
     function get_tbl_shift_time($id,$master_id)
     { 
         // Join the tbl_shift table with user_shift_timings table
-        $this->db->select('user_shift_timings.*, tbl_shift.shift_name');
+        $this->db->select('user_shift_timings.*, tbl_shift.shift_name, tbl_shift.app_result_time');
         $this->db->from('user_shift_timings');
         $this->db->join('tbl_shift', 'user_shift_timings.shift_id = tbl_shift.id', 'left');
         $this->db->where('user_shift_timings.id', $id);
@@ -391,7 +391,7 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
     
     function get_master_jantri_temp($pid,$date){
         $master_id = $this->session->userdata['id'];
-        $this->db->select('user_shift_timings.*, tbl_shift.super_admin as mastertime');
+        $this->db->select('user_shift_timings.*, tbl_shift.app_result_time as resulttime');
         $this->db->from('user_shift_timings');
         $this->db->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id');
         $this->db->where('user_shift_timings.updated_by', $master_id);

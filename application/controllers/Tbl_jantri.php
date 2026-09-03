@@ -78,14 +78,16 @@ class Tbl_jantri extends CI_Controller
 		$data['tbl_transactions'] = [];
 		$data['sendjantri'] = 0;
 		$data['apply_commission'] = $useNewView && $this->input->get('apply_commission') === '1';
-		$data['apply_patti'] = $useNewView && $this->input->get('apply_patti') === '1';
+		$pattiParam = $this->input->get('apply_patti');
+		$data['apply_patti'] = $useNewView && ($pattiParam === null || $pattiParam === '1');
+		$data['round_to_50'] = $useNewView && $this->input->get('round_to_50') === '1';
 		if (isset($_GET) && !(empty($_GET))) {
 			//echo '<pre>'; print_r($_GET); echo '</pre>';	die;
 			$pid = $_GET['pid'];
 			$date = $_GET['date'];
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
 			//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
-			if($jandata){
+            if($jandata && !empty($jandata->resulttime)){
 			// $databaseTime = $jandata->mastertime; // Replace with your actual database time
 
 			// // Convert database time to 24-hour format for comparison
@@ -101,7 +103,7 @@ class Tbl_jantri extends CI_Controller
 			// 	$data['sendjantri'] = 0;
 			// }
 				// Define the date and time
-			$dateString = $jandata->open_date.' '.$jandata->mastertime;
+				$dateString = $jandata->open_date.' '.$jandata->resulttime;
 
 			// Create a DateTime object from the date string
 			$dateTime = new DateTime($dateString);

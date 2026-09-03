@@ -1101,3 +1101,23 @@ if (!empty($tbl_transactions)) {
     // });
     document.getElementById('tamnt').value = document.getElementById('ttamntt').value;
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("btnFetch");
+    if (!btn) {
+        return;
+    }
+
+    btn.style.display = "none";
+    const dateParam = new URLSearchParams(window.location.search).get("date");
+    const now = new Date();
+    const today = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+    const selectedDate = dateParam && dateParam.split("-").length === 3
+        ? dateParam.split("-").reverse().join("-")
+        : dateParam;
+
+    if (selectedDate === today && <?= ($sendjantri == 1 ? 'true' : 'false') ?>) {
+        btn.style.display = "block";
+    }
+});
+</script>

@@ -154,6 +154,18 @@
                                         </div>
                                         <div class="col-md-3 col-sm-12  form-group">
                                             <label>
+                                                App Result Time<span class="required">*</span>
+                                            </label>
+                                            <?php $app_result_time_value = $this->input->post('app_result_time') ? $this->input->post('app_result_time') : (!empty($tbl_shift_time['app_result_time']) ? date('h:i A', strtotime($tbl_shift_time['app_result_time'])) : ''); ?>
+                                            <div class="input-group date datetimepicker3">
+                                            <input name="app_result_time" type="text" value="<?php echo $app_result_time_value; ?>" class="form-control " required>
+											<span class="input-group-addon">
+               <span class="glyphicon glyphicon-time"></span>
+               </span>
+			   </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-12  form-group">
+                                            <label>
                                                 Data Entry Operator<span class="required">*</span>
                                             </label>
                                             <div class="input-group date datetimepicker3">

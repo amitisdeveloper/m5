@@ -83,7 +83,7 @@ class Tbl_jantri extends CI_Controller
 			$date = $_GET['date'];
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
 			//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
-			if($jandata){
+            if($jandata && !empty($jandata->resulttime)){
 			// $databaseTime = $jandata->mastertime; // Replace with your actual database time
 
 			// // Convert database time to 24-hour format for comparison
@@ -99,7 +99,7 @@ class Tbl_jantri extends CI_Controller
 			// 	$data['sendjantri'] = 0;
 			// }
 				// Define the date and time
-			$dateString = $jandata->open_date.' '.$jandata->mastertime;
+				$dateString = $jandata->open_date.' '.$jandata->resulttime;
 
 			// Create a DateTime object from the date string
 			$dateTime = new DateTime($dateString);
