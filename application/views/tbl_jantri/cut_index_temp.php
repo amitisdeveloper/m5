@@ -8,14 +8,6 @@
         }
     }());
 
-    // A browser reload should start a fresh Jantri instead of replaying the last GET request.
-    (function resetJantriOnReload() {
-        const navigation = performance.getEntriesByType('navigation')[0];
-        if (navigation && navigation.type === 'reload' && window.location.search) {
-            window.location.replace(window.location.pathname);
-        }
-    }());
-
     $(function () {
 
         $('.med').on('change', function () {
@@ -237,35 +229,10 @@
     }
 
     .jantri-control-grid {
-    .jantri-control-grid {
         display: flex;
-        gap: 16px;
-        align-items: stretch;
         gap: 16px;
         align-items: stretch;
         flex-wrap: wrap;
-    }
-
-    .jantri-main-panel {
-        flex: 3 1 0;
-        min-width: 360px;
-    }
-
-    .jantri-d-panel {
-        flex: 1 1 260px;
-        min-width: 260px;
-    }
-
-    .jantri-control-card {
-        border: 1px solid #E6E9ED;
-        border-radius: 4px;
-        background: #fff;
-        padding: 12px 14px;
-    }
-
-    .jantri-control-row {
-        display: flex;
-        flex-wrap: nowrap;
     }
 
     .jantri-main-panel {
@@ -290,20 +257,13 @@
         flex-wrap: nowrap;
         gap: 12px;
         align-items: flex-end;
-        align-items: flex-end;
     }
 
     .jantri-field {
         flex: 1 1 170px;
         min-width: 170px;
-    .jantri-field {
-        flex: 1 1 170px;
-        min-width: 170px;
     }
 
-    .jantri-field label,
-    .jantri-option-group label,
-    .jantri-submit-label {
     .jantri-field label,
     .jantri-option-group label,
     .jantri-submit-label {
@@ -317,15 +277,8 @@
         min-width: 220px;
     }
 
-    .jantri-option-group {
-        flex: 1 1 240px;
-        min-width: 220px;
-    }
-
     .jantri-options {
         display: flex;
-        flex-wrap: wrap;
-        gap: 12px 18px;
         flex-wrap: wrap;
         gap: 12px 18px;
         align-items: center;
@@ -334,7 +287,6 @@
     .jantri-option {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
         gap: 8px;
         margin: 0;
         white-space: nowrap;
@@ -349,20 +301,8 @@
 
     .jantri-submit {
         flex: 0 0 140px;
-        flex: 0 0 140px;
     }
 
-    .jantri-submit .btn {
-        width: 100%;
-    }
-
-    .jantri-main-panel .jantri-field {
-        min-width: 130px;
-    }
-
-    .jantri-main-panel .jantri-total {
-        flex: 0 1 120px;
-        min-width: 120px;
     .jantri-submit .btn {
         width: 100%;
     }
@@ -388,22 +328,8 @@
     .jantri-d-panel .jantri-field {
         flex: 0 1 105px;
         min-width: 0 !important;
-    .jantri-main-panel .jantri-option-group {
-        flex: 1 1 210px;
-        min-width: 210px;
     }
 
-    .jantri-main-panel .jantri-submit {
-        flex: 0 0 110px;
-    }
-
-    .jantri-d-panel .jantri-field {
-        flex: 0 1 105px;
-        min-width: 0 !important;
-    }
-
-    .jantri-d-panel .jantri-submit {
-        flex: 0 0 112px;
     .jantri-d-panel .jantri-submit {
         flex: 0 0 112px;
     }
@@ -442,24 +368,7 @@
         .jantri-field,
         .jantri-option-group,
         .jantri-submit {
-        .jantri-main-panel,
-        .jantri-d-panel {
-            min-width: 100%;
-        }
-
-        .jantri-field,
-        .jantri-option-group,
-        .jantri-submit {
             width: 100%;
-            min-width: 100%;
-        }
-
-        .jantri-main-panel .jantri-field,
-        .jantri-main-panel .jantri-option-group,
-        .jantri-main-panel .jantri-submit,
-        .jantri-d-panel .jantri-field,
-        .jantri-d-panel .jantri-submit {
-            min-width: 100% !important;
             min-width: 100%;
         }
 
@@ -496,8 +405,6 @@
 
 <div class="x_panel">
     <div class="x_title">
-        <div class="jantri-control-grid">
-            <form name="custom-main" action="" method="GET" class="jantri-control-card jantri-main-panel">
         <div class="jantri-control-grid">
             <form name="custom-main" action="" method="GET" class="jantri-control-card jantri-main-panel">
                 <?php
@@ -591,90 +498,11 @@
                 <input type="hidden" name="round_to_50" value="<?= $round_to_50 ? '1' : '' ?>">
             </form>
         </div>
-                <div class="jantri-control-row">
-                    <div class="form-group jantri-field">
-                        <label for="shift">Shift</label>
-                        <select name="pid" id="shift" class="form-control" required>
-                            <option value="">Choose option</option>
-                            <?php foreach ($shifts as $key => $val) { ?>
-                                <option value="<?= $val['id'] ?>" <?= ((string) $selected_shift_id === (string) $val['id']) ? 'selected' : '' ?>><?= html_escape($val['shift_name']) ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                    <div class="form-group jantri-field">
-                        <label for="jantri-date">Date</label>
-                        <input id="jantri-date" name="date" class="birthdaymaster form-control" type="text" value="<?= isset($_GET['date']) ? html_escape($_GET['date']) : '' ?>" autocomplete="off" required>
-                    </div>
-                    <div class="jantri-option-group">
-                        <label>Amount Adjustments</label>
-                        <div class="jantri-options" aria-label="Amount adjustments">
-                            <label class="jantri-option" for="apply-commission">
-                                <input id="apply-commission" type="checkbox" name="apply_commission" value="1" <?= $apply_commission ? 'checked' : '' ?>>
-                                Commission
-                            </label>
-                            <label class="jantri-option" for="apply-patti">
-                                <input type="hidden" name="apply_patti" value="0">
-                                <input id="apply-patti" type="checkbox" name="apply_patti" value="1" <?= $apply_patti ? 'checked' : '' ?>>
-                                Patti
-                            </label>
-                            <label class="jantri-option" for="convert-to-50" title="Rounds values to 50-step buckets: 0-24 -> 0, 25-74 -> 50, 75-100 -> 100.">
-                                <input id="convert-to-50" type="checkbox" name="round_to_50" value="1" <?= $round_to_50 ? 'checked' : '' ?>>
-                                Convert into 50 and 100
-                            </label>
-                        </div>
-                    </div>
-                    <div class="jantri-field jantri-total">
-                        <label for="tamnt">Total Amount</label>
-                        <input id="tamnt" class="form-control" value="0" readonly>
-                    </div>
-                    <div class="jantri-submit">
-                        <label class="jantri-submit-label">&nbsp;</label>
-                        <button type="submit" name="submit" value="main" class="btn btn-primary">Submit</button>
-                    </div>
-                </div>
-                <input type="hidden" name="d_percentage" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
-                <input type="hidden" name="d_amount" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
-            </form>
-            <form name="custom-d" action="" method="GET" class="jantri-control-card jantri-d-panel">
-                <div class="jantri-control-row">
-                    <div class="jantri-field">
-                        <label for="d-percentage">D-Percentage</label>
-                        <input id="d-percentage" name="d_percentage" type="number" min="0" max="100" step="any" class="form-control" value="<?= isset($_GET['d_percentage']) ? html_escape($_GET['d_percentage']) : '' ?>">
-                    </div>
-                    <div class="jantri-field">
-                        <label for="d-amount">D-Amount</label>
-                        <input id="d-amount" name="d_amount" type="number" min="0" step="any" class="form-control" value="<?= isset($_GET['d_amount']) ? html_escape($_GET['d_amount']) : '' ?>">
-                    </div>
-                    <div class="jantri-submit">
-                        <label class="jantri-submit-label">&nbsp;</label>
-                        <button type="submit" name="submit" value="d" class="btn btn-success">D Submit</button>
-                    </div>
-                </div>
-                <input type="hidden" name="pid" value="<?= isset($_GET['pid']) ? html_escape($_GET['pid']) : '' ?>">
-                <input type="hidden" name="date" value="<?= isset($_GET['date']) ? html_escape($_GET['date']) : '' ?>">
-                <input type="hidden" name="apply_commission" value="<?= $apply_commission ? '1' : '' ?>">
-                <input type="hidden" name="apply_patti" value="<?= $apply_patti ? '1' : '' ?>">
-                <input type="hidden" name="round_to_50" value="<?= $round_to_50 ? '1' : '' ?>">
-            </form>
-        </div>
     </div>
 
     <form action="tbl_transactions/sendjantri" method="post" style="">
 
         <?php
-        if (!function_exists('jantri_round_amount')) {
-            function jantri_round_amount($rawValue, $roundToFifty = false)
-            {
-                $value = max(0, (float)$rawValue);
-
-                if ($roundToFifty) {
-                    return round($value / 50) * 50;
-                }
-
-                return round(floor($value) / 5) * 5;
-            }
-        }
-
         if (!function_exists('jantri_round_amount')) {
             function jantri_round_amount($rawValue, $roundToFifty = false)
             {
@@ -1241,7 +1069,6 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
                 $ftamnt = '';
                 $ttamntt = $keyy = 0;
                 $roundToFifty = !empty($round_to_50);
-                $roundToFifty = !empty($round_to_50);
                 $kval = '';
                 $rowCount = 0;
                 $rowSum = 0; // Initialize variable to hold the sum of each row
@@ -1265,7 +1092,6 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
                         }
                         // Match the requested buckets: 7.888 -> 5 and 8.6 -> 10.
                         $value = jantri_round_amount($rawValue, $roundToFifty);
-                        $value = jantri_round_amount($rawValue, $roundToFifty);
                      // Accumulate the row sum
                      $rowSum += $value;
     ?>
@@ -1281,11 +1107,9 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
                         echo '<td style="text-align: center;">
                                         <span style="text-align:center;float: left;margin-right: 10px;margin-left: 5px;"></span>
                                         <input type="text" value="'.jantri_round_amount($rowSum, $roundToFifty).'" name="row_'.($rowTotalCounter).'" id="011" tabindex="011" style="width: 65%;" class="medrow" autocomplete="off">
-                                        <input type="text" value="'.jantri_round_amount($rowSum, $roundToFifty).'" name="row_'.($rowTotalCounter).'" id="011" tabindex="011" style="width: 65%;" class="medrow" autocomplete="off">
                                     </td></tr>';
                         
                         // Add the row sum to the total sum
-                        $ttamntt += jantri_round_amount($rowSum, $roundToFifty);
                         $ttamntt += jantri_round_amount($rowSum, $roundToFifty);
                         
                         // Reset the row sum for the next row
@@ -1427,7 +1251,7 @@ for ($x = 0; $x < count($tamount[$k]); $x++) {
     // });
     document.getElementById('tamnt').value = document.getElementById('ttamntt').value;
 </script>
-<script>
+<!-- <script>
 document.addEventListener("DOMContentLoaded", function () {
 
     // get the URL parameter "date"
@@ -1466,4 +1290,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
-</script>
+</script> -->

@@ -90,40 +90,58 @@ class Tbl_jantri extends CI_Controller
 			$date = $_GET['date'];
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
 			//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
-            if($jandata && !empty($jandata->resulttime)){
-			// $databaseTime = $jandata->mastertime; // Replace with your actual database time
+			$shiftData = $this->db
+				->select('tbl_shift.shift_name, tbl_shift.super_admin, user_shift_timings.master')
+				->from('user_shift_timings')
+				->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id')
+				->where('user_shift_timings.id', $pid)
+				->group_start()
+				->where('user_shift_timings.updated_by', $this->session->userdata['id'])
+				->or_where('user_shift_timings.updated_by', 1)
+				->group_end()
+				->get()
+				->row();
 
-			// // Convert database time to 24-hour format for comparison
-			// $databaseTime24 = date('H:i', strtotime($databaseTime));
+			if ($shiftData && !empty($shiftData->super_admin)) {
+				$istTimezone = new DateTimeZone('Asia/Kolkata');
+				$currentTime = new DateTime('now', $istTimezone);
+				$selectedDateObject = DateTime::createFromFormat('d-m-Y', $date, $istTimezone);
+				if (!$selectedDateObject) {
+					$selectedDateObject = DateTime::createFromFormat('Y-m-d', $date, $istTimezone);
+				}
+				$selectedDate = $selectedDateObject ? $selectedDateObject->format('Y-m-d') : '';
+				$businessDate = $currentTime->format('Y-m-d');
+				if ($currentTime->format('H:i:s') < '14:00:00') {
+					$businessDate = (clone $currentTime)->modify('-1 day')->format('Y-m-d');
+				}
+				$cutoffTime = date('H:i:s', strtotime($shiftData->super_admin));
+				$cutoffDate = $businessDate;
+				if ($cutoffTime < '14:00:00') {
+					$cutoffDate = (new DateTime($businessDate, $istTimezone))
+						->modify('+1 day')
+						->format('Y-m-d');
+				}
+				$cutoffDateTime = DateTime::createFromFormat(
+					'Y-m-d H:i:s',
+					$cutoffDate . ' ' . $cutoffTime,
+					$istTimezone
+				);
 
-			// // Get current time in 24-hour format
-			// $current24 = date('H:i');
-			// //echo $databaseTime24.$current24; die;
-			// if($jandata->open_date == date('Y-m-d') && ($databaseTime24 > $current24)){
-			// 	$data['sendjantri'] = 1;	
-			// } 
-			// else{
-			// 	$data['sendjantri'] = 0;
-			// }
-				// Define the date and time
-				$dateString = $jandata->open_date.' '.$jandata->resulttime;
+				$businessStart = DateTime::createFromFormat(
+					'Y-m-d H:i:s',
+					$businessDate . ' 14:00:00',
+					$istTimezone
+				);
 
-			// Create a DateTime object from the date string
-			$dateTime = new DateTime($dateString);
-
-			// Get the Unix timestamp
-			$dbtimestamp = $dateTime->getTimestamp();
-
-			$currtimestamp = time();
-
-			if($currtimestamp < $dbtimestamp){
-				$data['sendjantri'] = 1;	
-			} 
-			else{
-				$data['sendjantri'] = 0;
+				// Enable all shifts from the 2 PM business-day start until their expiry.
+				$data['sendjantri'] = (
+					$selectedDate === $businessDate &&
+					$businessStart &&
+					$cutoffDateTime &&
+					$currentTime >= $businessStart &&
+					$currentTime <= $cutoffDateTime
+				) ? 1 : 0;
 			}
-
-		}
 			//$data['sendjantri'] = 
 			 if($this->session->userdata['id'] != '1'){
 			$data['tbl_transactions'] = $this->Tbl_transactions_model->get_custom_transactions_total_shift_master($pid, $date);
