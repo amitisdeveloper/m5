@@ -637,6 +637,11 @@ if($_POST['fromto_to']=='00'){
 	}
 	function sendjantri()
 	{ //echo '<pre>'; print_r($_POST); die;
+		$partyId = $this->session->userdata['id'];
+		$ledger = $this->Tbl_ledger_model->get_tbl_ledger($partyId);
+		if ($partyId != '1' && (!$ledger || !empty($ledger['is_locked']))) {
+			show_error('Jantri sending is locked for this master.', 403);
+		}
 		if(isset($_POST) && empty($_POST['shift'])){
 			echo '<script>alert("Please Select Valid Shift!!"); history.go(-1); </script>';
 		}

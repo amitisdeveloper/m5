@@ -479,7 +479,7 @@
                                           <td><input type="checkbox" name="isactive" <?= ($tbl_ledger['status']) ? 'checked' : '' ?>></td>
 
                                        </tr>
-                                       <tr><td>Automatic Jantri</td><td><input type="checkbox" name="automatic_jantri" ></td></tr>
+                                       <tr><td>Automatic Jantri</td><td><input type="checkbox" name="automatic_jantri" <?= !empty($tbl_ledger['automatic_jantri']) ? 'checked' : '' ?>></td></tr>
                                        <tr><td>Lock Master</td><td><input type="checkbox" <?= ($tbl_ledger['is_locked']) ? 'checked' : '' ?> name="is_locked"></td></tr>
 
                                     </tbody>

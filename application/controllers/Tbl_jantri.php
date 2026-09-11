@@ -162,6 +162,9 @@ class Tbl_jantri extends CI_Controller
 		$data['shifts'] = $this->Tbl_shift_model->get_all_tbl_shift_master($this->session->userdata['id']);
 		$tbl_ledger_elements = $this->Tbl_ledger_model->get_tbl_ledger($this->session->userdata['id']);
 		$data['ledger'] = $tbl_ledger_elements;
+		if (empty($tbl_ledger_elements) || !empty($tbl_ledger_elements['is_locked'])) {
+			$data['sendjantri'] = 0;
+		}
 		//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
 		$data['_view'] = $useNewView
 			? 'tbl_jantri/cut_index_temp'
