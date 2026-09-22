@@ -790,6 +790,34 @@ return $query->result();
         return $this->db->get_where('tbl_ledger', array('is_master' => '1', 'status' => 1))->result();
     }
 
+    function get_master_profile($id)
+
+    {
+
+        return $this->db->get_where('tbl_ledger', array('id' => $id, 'is_master' => '1', 'status' => 1))->row_array();
+    }
+
+    function get_master_helpline($id)
+
+    {
+
+        if (!$this->db->field_exists('helpline_number', 'tbl_ledger')) {
+            return array(
+                'helpline_number' => '',
+            );
+        }
+
+        $this->db->select('helpline_number');
+        $this->db->from('tbl_ledger');
+        $this->db->where('id', $id);
+        $this->db->where('is_master', '1');
+        $row = $this->db->get()->row_array();
+
+        return $row ? $row : array(
+            'helpline_number' => '',
+        );
+    }
+
     /* 
 
      * Get tbl_ledger admin

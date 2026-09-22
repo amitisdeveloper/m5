@@ -6,6 +6,8 @@
  
 class Tbl_shift_model extends CI_Model
 {
+    const JANTRI_CRON_TIMEZONE = 'Asia/Kolkata';
+
     function __construct()
     {
         parent::__construct();
@@ -188,6 +190,40 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
 
     return $result;
 }
+
+    function get_automatic_jantri_timings($master_id, $business_date)
+    {
+        $this->configure_jantri_cron_timezone();
+        $timing_date = date('Y-m-d', strtotime($business_date));
+        $next_timing_date = date('Y-m-d', strtotime($timing_date . ' +1 day'));
+        $this->db->select('
+            user_shift_timings.id,
+            user_shift_timings.shift_id,
+            user_shift_timings.open_date,
+            user_shift_timings.master,
+            tbl_shift.shift_name
+        ');
+        $this->db->from('user_shift_timings');
+        $this->db->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id', 'left');
+        $this->db->where_in('user_shift_timings.updated_by', array(1, $master_id));
+        $this->db->group_start();
+        $this->db->where('user_shift_timings.open_date', $timing_date);
+        $this->db->or_where('user_shift_timings.open_date', $next_timing_date);
+        $this->db->group_end();
+        $this->db->where('user_shift_timings.is_active', 1);
+        $this->db->where('tbl_shift.is_active', 1);
+        $this->db->where('user_shift_timings.master IS NOT NULL', null, false);
+        $this->db->where('user_shift_timings.master !=', '');
+        $this->db->order_by('user_shift_timings.open_date', 'ASC');
+        $this->db->order_by("STR_TO_DATE(user_shift_timings.master, '%h:%i %p')", 'ASC', false);
+        return $this->db->get()->result_array();
+    }
+
+    private function configure_jantri_cron_timezone()
+    {
+        date_default_timezone_set(self::JANTRI_CRON_TIMEZONE);
+    }
+
     function get_all_tbl_shift_master_cutjantri($params = array())
     {
 //print_r($this->session->userdata['userid']); die;

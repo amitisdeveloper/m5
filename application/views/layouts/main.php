@@ -63,6 +63,9 @@ $master_balance = get_master_coin_balance($master_id);
                 <span class="user-profile">
                   <i class="fa fa-users"></i> <?= $this->session->userdata['first_name'] ?>
                 </span>
+                <?php if ($this->session->userdata('role') === 'Master'): ?>
+                <a class="logout-button" href="<?php echo base_url(); ?>profile"><i class="fa fa-phone"></i> Profile</a>
+                <?php endif; ?>
                 <a class="logout-button" href="<?php echo base_url(); ?>logout"><i class="fa fa-sign-out"></i> Log Out</a>
                 </div>
               </li>

@@ -278,6 +278,8 @@ class Tbl_openno extends CI_Controller
 
 		$data['backvoucher'] = $bvc;
 
+		$data['master_helpline'] = $this->Tbl_ledger_model->get_master_helpline($_GET['master']);
+
 		//echo '<pre>'; print_r($data); echo '</pre>'; die;
 
 		$data['_view'] = 'tbl_openno/view_till_date_ledgers_app';

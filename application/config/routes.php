@@ -17,6 +17,8 @@ $route['ledger3'] = 'Tbl_ledger/add3';
 $route['ledger4'] = 'Tbl_ledger/add4';
 $route['ledger5'] = 'Tbl_ledger/add5';
 $route['admin'] = 'Tbl_ledger/add_admin';
+$route['profile'] = 'Tbl_ledger/profile';
+$route['master_helpline_app'] = 'Tbl_ledger/master_helpline_app';
 $route['master_commission'] = 'Tbl_ledger/master_comm_index';
 
 $route['edit_admin'] = 'Tbl_ledger/edit_admin';

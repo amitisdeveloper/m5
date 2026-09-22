@@ -395,8 +395,8 @@ else{ */
 <td colspan="2"><?=$today_hisab?></td>
 
 	<?php
-
-//}?>
+//}
+?>
 
 </tr>
 

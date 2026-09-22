@@ -508,6 +508,82 @@ class Tbl_ledger extends CI_Controller
 <?php }
     }
 
+    function profile()
+    {
+        if ($this->session->userdata('role') !== 'Master') {
+            show_error('Only masters can update helpline details.', 403);
+        }
+
+        $id = $this->session->userdata('id');
+        $data['tbl_ledger'] = $this->Tbl_ledger_model->get_master_profile($id);
+
+        if (empty($data['tbl_ledger'])) {
+            show_error('The master profile you are trying to edit does not exist.');
+        }
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('helpline_number', 'Helpline Number', 'trim|required|callback_indian_mobile_check');
+
+        if ($this->form_validation->run()) {
+            $helplineNumber = $this->normalize_indian_mobile_number($this->input->post('helpline_number'));
+
+            $this->Tbl_ledger_model->update_tbl_ledger($id, array(
+                'helpline_number' => $helplineNumber,
+            ));
+
+            $this->session->set_flashdata('message', 'Helpline details updated successfully.');
+            redirect('/profile');
+        }
+
+        $data['_view'] = 'tbl_ledger/profile';
+        $this->load->view('layouts/main', $data);
+    }
+
+    function indian_mobile_check($number)
+    {
+        $normalized = $this->normalize_indian_mobile_number($number);
+
+        if (!preg_match('/^[6-9][0-9]{9}$/', $normalized)) {
+            $this->form_validation->set_message('indian_mobile_check', 'Please enter a valid 10 digit Indian mobile number.');
+            return false;
+        }
+
+        return true;
+    }
+
+    private function normalize_indian_mobile_number($number)
+    {
+        $digits = preg_replace('/[^0-9]/', '', (string) $number);
+
+        if (strlen($digits) === 12 && substr($digits, 0, 2) === '91') {
+            $digits = substr($digits, 2);
+        }
+
+        if (strlen($digits) === 11 && substr($digits, 0, 1) === '0') {
+            $digits = substr($digits, 1);
+        }
+
+        return $digits;
+    }
+
+    function master_helpline_app()
+    {
+        $masterId = $this->input->get('master');
+        $helpline = $this->Tbl_ledger_model->get_master_helpline($masterId);
+        $whatsappNumber = $helpline['helpline_number'] ? '91' . $helpline['helpline_number'] : '';
+
+        $response = array(
+            'status' => true,
+            'helpline_number' => $helpline['helpline_number'],
+            'whatsapp_number' => $whatsappNumber,
+            'can_whatsapp' => !empty($helpline['helpline_number']),
+        );
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
     /*
      * Deleting tbl_ledger
      */

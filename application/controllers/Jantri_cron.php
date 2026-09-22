@@ -3,22 +3,39 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Jantri_cron extends CI_Controller
 {
+    const JANTRI_CRON_TIMEZONE = 'Asia/Kolkata';
+
     public function automatic()
     {
         if (!$this->input->is_cli_request()) show_404();
-        date_default_timezone_set('Asia/Kolkata');
+        $this->configure_jantri_cron_timezone();
         $this->load->helper('jantri');
         $this->load->model('Tbl_transactions_model');
         $this->load->model('Tbl_openno_model');
+        $this->load->model('Tbl_shift_model');
         $this->load->model('CoinModel');
-        $now = new DateTime('now', new DateTimeZone('Asia/Kolkata'));
-        $businessDate = jantri_business_date($now);
+        $now = new DateTime('now', new DateTimeZone(self::JANTRI_CRON_TIMEZONE));
+        $businessDate = jantri_business_date(clone $now);
         $masters = $this->db->where('is_master', 1)->where('status', 1)->where('automatic_jantri', 1)->where('is_locked', 0)->get('tbl_ledger')->result_array();
         foreach ($masters as $master) {
-            $timings = $this->db->select('user_shift_timings.id, tbl_shift.super_admin')->from('user_shift_timings')->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id')->where('user_shift_timings.updated_by', $master['id'])->where('tbl_shift.super_admin IS NOT NULL', null, false)->get()->result_array();
+            $timings = $this->Tbl_shift_model->get_automatic_jantri_timings($master['id'], $businessDate);
             foreach ($timings as $timing) {
-                $cutoff = jantri_cutoff_datetime($businessDate, $timing['super_admin']);
-                if (!$cutoff || $now < $cutoff) continue;
+                $cutoff = jantri_cutoff_datetime($businessDate, $timing['master']);
+                if (!$cutoff) {
+                    $this->write_jantri_cron_log(
+                        "time not matched: invalid cutoff master={$master['id']} shift={$timing['id']} business_date={$businessDate} shift_time={$timing['master']} now=".$now->format('Y-m-d h:i:s A')
+                    );
+                    continue;
+                }
+                if ($now < $cutoff) {
+                    $this->write_jantri_cron_log(
+                        "time not matched: condition failed master={$master['id']} shift={$timing['id']} business_date={$businessDate} shift_time={$timing['master']} now=".$now->format('Y-m-d h:i:s A').' cutoff='.$cutoff->format('Y-m-d h:i:s A')
+                    );
+                    continue;
+                }
+                $this->write_jantri_cron_log(
+                    "time matched: condition passed master={$master['id']} shift={$timing['id']} business_date={$businessDate} shift_time={$timing['master']} now=".$now->format('Y-m-d h:i:s A').' cutoff='.$cutoff->format('Y-m-d h:i:s A')
+                );
                 $nextDate = date('Y-m-d', strtotime($businessDate . ' +1 day'));
                 $sent = $this->db->where('shift_id', $timing['id'])->where('party_id', $master['id'])->where('t_date >=', $businessDate . ' 00:00:00')->where('t_date <', $nextDate . ' 00:00:00')->where('show_to_admin', 1)->count_all_results('tbl_master_transaction');
                 if ($sent) continue;
@@ -34,7 +51,7 @@ class Jantri_cron extends CI_Controller
                 $this->db->trans_start();
                 $sentId = $this->send_automatic($post, $master);
                 $this->db->trans_complete();
-                if ($sentId && $this->db->trans_status()) echo "sent master={$master['id']} shift={$timing['id']} date={$businessDate}\n";
+                if ($sentId && $this->db->trans_status()) $this->write_jantri_cron_log("sent master={$master['id']} shift={$timing['id']} date={$businessDate}");
             }
         }
     }
@@ -49,5 +66,17 @@ class Jantri_cron extends CI_Controller
         if (!$id) return false;
         $this->Tbl_transactions_model->add_tbl_only_transaction_may($id, $post);
         return $id;
+    }
+
+    private function configure_jantri_cron_timezone()
+    {
+        date_default_timezone_set(self::JANTRI_CRON_TIMEZONE);
+    }
+
+    private function write_jantri_cron_log($message)
+    {
+        $line = '['.date('Y-m-d h:i:s A').'] '.$message;
+        echo $line."\n";
+        file_put_contents(APPPATH.'logs/jantri-cron.log', $line.PHP_EOL, FILE_APPEND | LOCK_EX);
     }
 }

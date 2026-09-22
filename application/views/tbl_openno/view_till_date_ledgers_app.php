@@ -140,6 +140,21 @@ table .show-on-mobile {
 
 <?php if(isset($tdledger['today'])&& !empty($tdledger['today'])){?>
 
+<?php
+$helplineNumber = isset($master_helpline['helpline_number']) ? trim($master_helpline['helpline_number']) : '';
+$helplineWhatsapp = $helplineNumber ? '91' . preg_replace('/[^0-9]/', '', $helplineNumber) : '';
+$helplineMessage = rawurlencode('Hello, I need help with my account.');
+?>
+
+<?php if($helplineNumber){ ?>
+<div style="border:1px solid #000000;background:#f7f7f7;color:#000000;margin:0 auto 10px auto;padding:10px;max-width:100%;text-align:center;font-weight:bold;">
+	WhatsApp Helpline:
+	<a href="https://wa.me/<?=$helplineWhatsapp?>?text=<?=$helplineMessage?>" style="color:#128c7e;text-decoration:underline;">
+		<i class="fa fa-whatsapp" aria-hidden="true"></i> <?=$helplineNumber?>
+	</a>
+</div>
+<?php } ?>
+
 <table>
 
 <tr class="noBorder">
