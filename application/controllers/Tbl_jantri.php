@@ -89,6 +89,9 @@ class Tbl_jantri extends CI_Controller
 			$pid = $_GET['pid'];
 			$date = $_GET['date'];
 			$jandata =  $this->Tbl_shift_model->get_master_jantri_temp($pid,$date);
+			if (!empty($jandata->id)) {
+				$pid = $jandata->id;
+			}
 			//echo '<pre>'; print_r($jandata); echo '</pre>'; die;
 			$shiftData = $this->db
 				->select('tbl_shift.shift_name, tbl_shift.super_admin, user_shift_timings.master')

@@ -273,13 +273,29 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
          user_shift_timings.open_date AS user_shift_open_date,
          tbl_shift.updated_by as adminshift
      ');
+     $today = date('Y-m-d');
+     $tomorrow = date('Y-m-d', strtotime('+1 day'));
+     $preferredTimingSql = 'user_shift_timings.id = (
+        SELECT ust_pick.id
+        FROM user_shift_timings AS ust_pick
+        WHERE ust_pick.shift_id = tbl_shift.id
+          AND ust_pick.updated_by IN (1, '.$this->db->escape($user_shift_updated_by).')
+          AND ust_pick.open_date IN ('.$this->db->escape($today).', '.$this->db->escape($tomorrow).')
+          AND ust_pick.is_active = 1
+        ORDER BY
+          CASE WHEN ust_pick.updated_by = '.$this->db->escape($user_shift_updated_by).' THEN 0 ELSE 1 END ASC,
+          CASE WHEN ust_pick.open_date = '.$this->db->escape($today).' THEN 0 ELSE 1 END ASC,
+          ust_pick.id DESC
+        LIMIT 1
+     )';
      $this->db->from('tbl_shift');
-     $this->db->join('user_shift_timings', 'tbl_shift.id = user_shift_timings.shift_id AND user_shift_timings.updated_by IN (1, '.$user_shift_updated_by.')', 'left');
+     $this->db->join('user_shift_timings', 'tbl_shift.id = user_shift_timings.shift_id AND '.$preferredTimingSql, 'left', false);
      $this->db->group_start();
      $this->db->where('tbl_shift.updated_by', $tbl_shift_updated_by);
      $this->db->or_where_in('user_shift_timings.updated_by', [1, $user_shift_updated_by]);
      $this->db->group_end();
-     $this->db->group_by('tbl_shift.id');
+     $this->db->where('tbl_shift.is_active', 1);
+     $this->db->order_by('tbl_shift.id', 'ASC');
         $query = $this->db->get();
         // echo $this->db->last_query(); die;
 
@@ -448,7 +464,36 @@ function get_all_tbl_shift_master_for_trans($updated_by, $fromdate, $todate)
        // $this->db->where('user_shift_timings.open_date',date('Y-m-d',strtotime($date)));		
         $query = $this->db->get();
        // echo $this->db->last_query(); die;
-       return $query->row();
+        $result = $query->row();
+        if ($result) {
+            return $result;
+        }
+
+        $stale_timing = $this->db
+            ->select('shift_id')
+            ->from('user_shift_timings')
+            ->where('id', $pid)
+            ->where('updated_by', $master_id)
+            ->get()
+            ->row();
+
+        if (!$stale_timing) {
+            return null;
+        }
+
+        $this->db->select('user_shift_timings.*, tbl_shift.app_result_time as resulttime');
+        $this->db->from('user_shift_timings');
+        $this->db->join('tbl_shift', 'tbl_shift.id = user_shift_timings.shift_id');
+        $this->db->where('user_shift_timings.updated_by', $master_id);
+        $this->db->where('user_shift_timings.shift_id', $stale_timing->shift_id);
+        $this->db->group_start();
+        $this->db->where('user_shift_timings.open_date', date('Y-m-d', strtotime($date)));
+        $this->db->or_where('user_shift_timings.open_date', date('Y-m-d', strtotime($date . ' +24 hours')));
+        $this->db->group_end();
+        $this->db->where('user_shift_timings.is_active', 1);
+        $this->db->order_by('user_shift_timings.open_date', 'ASC');
+        $this->db->order_by('user_shift_timings.id', 'DESC');
+        return $this->db->get()->row();
    }
 
     function get_master_jantri($pid,$date){
