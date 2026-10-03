@@ -487,6 +487,26 @@ $this->db->where(
 	/*
 	 * function to add new tbl_transaction
 	 */
+
+	// Latest sent entry for the same ledger, shift and business date.
+	function get_latest_sent_jantri($party, $shift, $date, $master)
+	{
+		$this->db->where('party_id', $party);
+		$this->db->where('shift_id', $shift);
+		$this->db->where('master_id', $master);
+		$this->db->where('show_to_admin', 1);
+		$this->db->where('t_date >=', $date . ' 00:00:00');
+		$this->db->where('t_date <', date('Y-m-d', strtotime($date . ' +1 day')) . ' 00:00:00');
+		return $this->db->order_by('id', 'DESC')->limit(1)->get('tbl_master_transaction')->row_array();
+	}
+
+	function replace_sent_jantri($id, $params, $numbers)
+	{
+		$this->db->where('id', $id)->update('tbl_master_transaction', $params);
+		// Remove the previous numbers, including numbers omitted by the new send.
+		$this->db->where('master_id', $id)->delete('tbl_trans_numbers');
+		return $this->add_tbl_only_transaction_may($id, $numbers);
+	}
 	function add_tbl_transaction($params)
 	{ //print_r($params); //print_r($this->session->userid); die;
 		$params['created_by'] = $this->session->userid;
@@ -1079,6 +1099,10 @@ $this->db->where(
 			tbl_master_transaction.id,
 			tbl_staff.staff_name,
 			tbl_shift.open_date,
+			user_shift_timings.open_date AS master_shift_date,
+			user_shift_timings.master AS master_shift_cutoff,
+			user_shift_timings.is_active AS master_timing_active,
+			tbl_shift.is_active AS master_shift_active,
 			tbl_shift.super_admin,
 			tbl_shift.data_entry_operator,
 			tbl_master_transaction.t_date,

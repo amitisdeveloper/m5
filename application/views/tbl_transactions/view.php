@@ -137,6 +137,19 @@ date_default_timezone_set('Asia/Kolkata');
 										$hourdiff = round(($ttime - $time)/3600, 1);
 										//$hourdiff = gmdate("H:00", time());
 										//echo $hourdiff.' <br>';
+                // Masters use the dated timing row, including next-day shifts.
+                $masterCutoff = false;
+                $masterCanManage = false;
+                if ($_SESSION['role'] == 'Master') {
+                    $shiftDate = trim(isset($val['master_shift_date']) ? $val['master_shift_date'] : '');
+                    $shiftCutoff = trim(isset($val['master_shift_cutoff']) ? $val['master_shift_cutoff'] : '');
+                    if ($shiftDate !== '' && $shiftCutoff !== '') {
+                        $masterCutoff = strtotime($shiftDate . ' ' . $shiftCutoff);
+                    }
+                    $masterCanManage = !empty($val['master_timing_active'])
+                        && !empty($val['master_shift_active'])
+                        && $masterCutoff !== false && $ttime < $masterCutoff;
+                }
                 $tamnt = explode(',',$val['trn_amt']);
 							?>
 							<tr>
@@ -156,9 +169,11 @@ date_default_timezone_set('Asia/Kolkata');
 
               <td>
                               <i class="fa fa-eye" aria-hidden="true" data-id="<?=$key?>" onclick="popdata(<?=$key?>)" style="font-size:20px;"></i>
-                              <?php if($hourdiff <= '12' || $_SESSION['role']=='Super Admin' || $_SESSION['role']=='Master'){ ?>
+                              <?php if ($_SESSION['role'] == 'Master' ? $masterCanManage : ($hourdiff <= '12' || $_SESSION['role'] == 'Super Admin')) { ?>
+                              <span<?php if ($_SESSION['role'] == 'Master') { ?> class="master-transaction-actions" data-shift-cutoff="<?= $masterCutoff ?>"<?php } ?>>
 							  <a href="/tbl_transactions/edit_trn/<?=$val['id']?>"><i class="fa fa-pencil" aria-hidden="true" style="font-size:20px;"></i></a>
                               <a href="/tbl_transactions/remove/<?=$val['id']?>" onclick="return confirm('Are you sure you want to delete this Entry?');"><i class="fa fa-minus-circle" aria-hidden="true" style="font-size:20px;"></i></a>
+                              </span>
                               <?php } ?>
 							</td>
 							</tr>
@@ -349,3 +364,32 @@ for(var i = 0; i < array1.length; i++)
 return combos;
    }
 </script>
+<?php if ($_SESSION['role'] == 'Master') { ?>
+<script>
+(function () {
+    var serverTime = <?= (int) time() ?> * 1000;
+    var startedAt = performance.now();
+    var actions = Array.prototype.slice.call(document.querySelectorAll('.master-transaction-actions'));
+    function hasExpired(action) {
+        return serverTime + performance.now() - startedAt >= Number(action.dataset.shiftCutoff) * 1000;
+    }
+    function hideExpiredActions() {
+        actions.forEach(function (action) {
+            if (hasExpired(action)) action.hidden = true;
+        });
+    }
+    actions.forEach(function (action) {
+        action.addEventListener('click', function (event) {
+            if (hasExpired(action)) {
+                action.hidden = true;
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
+    });
+    hideExpiredActions();
+    window.setInterval(hideExpiredActions, 250);
+    document.addEventListener('visibilitychange', hideExpiredActions);
+})();
+</script>
+<?php } ?>

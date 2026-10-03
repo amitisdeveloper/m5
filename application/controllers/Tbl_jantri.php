@@ -114,12 +114,12 @@ class Tbl_jantri extends CI_Controller
 				}
 				$selectedDate = $selectedDateObject ? $selectedDateObject->format('Y-m-d') : '';
 				$businessDate = $currentTime->format('Y-m-d');
-				if ($currentTime->format('H:i:s') < '14:00:00') {
+				if ($currentTime->format('H:i:s') < '12:00:00') {
 					$businessDate = (clone $currentTime)->modify('-1 day')->format('Y-m-d');
 				}
 				$cutoffTime = date('H:i:s', strtotime($shiftData->super_admin));
 				$cutoffDate = $businessDate;
-				if ($cutoffTime < '14:00:00') {
+				if ($cutoffTime < '12:00:00') {
 					$cutoffDate = (new DateTime($businessDate, $istTimezone))
 						->modify('+1 day')
 						->format('Y-m-d');
@@ -132,11 +132,11 @@ class Tbl_jantri extends CI_Controller
 
 				$businessStart = DateTime::createFromFormat(
 					'Y-m-d H:i:s',
-					$businessDate . ' 14:00:00',
+					$businessDate . ' 12:00:00',
 					$istTimezone
 				);
 
-				// Enable all shifts from the 2 PM business-day start until their expiry.
+				// Enable all shifts from the 12 PM business-day start until their expiry.
 				$data['sendjantri'] = (
 					$selectedDate === $businessDate &&
 					$businessStart &&

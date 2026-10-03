@@ -644,52 +644,54 @@ if($_POST['fromto_to']=='00'){
 		}
 		if(isset($_POST) && empty($_POST['shift'])){
 			echo '<script>alert("Please Select Valid Shift!!"); history.go(-1); </script>';
-		}
-		$_POST['party'] = $this->session->userid;
-        $coinbal = $this->CoinModel->get_coin_balance($_POST['party']);
-		if($coinbal< $_POST['ttamntt']){
-			echo '<script>alert("Insufficient Coin Balance!!"); history.go(-1); </script>';
 			return false;
 		}
-		else{
-			$receiver_id = 1;
-			$amount = $_POST['ttamntt'];
-			$sender_id = $_POST['party'];
-			$this->CoinModel->allocateCoins($sender_id, $receiver_id, $amount);
+		$_POST['party'] = $this->session->userid;
+
+		$date = isset($_POST['dateoftrn']) && is_scalar($_POST['dateoftrn']) ? strtotime($_POST['dateoftrn']) : false;
+		if ($date === false || !isset($_POST['ttamntt']) || !is_numeric($_POST['ttamntt']) || $_POST['ttamntt'] < 0) {
+			show_error('Please select a valid date and amount.', 400);
+		}
+		$_POST['dateoftrn'] = date('Y-m-d', $date);
+		// Serialize this user's sends, including concurrent first submissions.
+		$lockName = 'sendjantri_' . sha1((string) $_POST['party']);
+		$lock = $this->db->query('SELECT GET_LOCK(?, 10) AS acquired', array($lockName))->row_array();
+		if (empty($lock['acquired'])) {
+			show_error('Jantri is being saved. Please try again.', 409);
+		}
+		$this->db->trans_begin();
+		$saved = false;
+		try {
+		$existing = $this->Tbl_transactions_model->get_latest_sent_jantri($_POST['party'], $_POST['shift'], $_POST['dateoftrn'], $partyId);
+		$previousAmount = $existing ? $existing['total_number_amount'] : 0;
+		$coinDifference = $_POST['ttamntt'] - $previousAmount;
+		if ($coinDifference > 0) {
+			$coinbal = $this->CoinModel->get_coin_balance($_POST['party']);
+			if ($coinbal < $coinDifference || !$this->CoinModel->allocateCoins($_POST['party'], 1, $coinDifference)) {
+				$this->db->trans_rollback();
+				echo '<script>alert("Insufficient Coin Balance!!"); history.go(-1); </script>';
+				return false;
+			}
+		} elseif ($coinDifference < 0) {
+			// Return the excess allocation when the replacement amount decreases.
+			if (!$this->CoinModel->allocateCoins(1, $_POST['party'], -$coinDifference)) {
+				throw new Exception('Unable to return the previous coin allocation.');
+			}
 		}
 		unset($_POST['row_0']);
 		unset($_POST['row_1']); unset($_POST['row_2']);unset($_POST['row_3']);
 		unset($_POST['row_4']);unset($_POST['row_5']);unset($_POST['row_6']);
 		unset($_POST['row_7']);unset($_POST['row_8']);unset($_POST['row_9']);
 		//echo '<pre>'; print_r($_POST); echo '</pre>'; die;
+		$_POST['trn_number'] = array();
+		$_POST['trn_amount'] = array();
 		foreach ($_POST as $key => $val) {
-			if ($val == 0) {
-				unset($_POST[$key]) ;
-			} 
-			if($key !='ttamntt' && $key !='dateoftrn' && $key !='shift' && $key !='party' && $val!=0){
-				//echo $key.'<br>';	//$_POST['trn_number'][] = $
-				$num = explode('_',$key);
-				if($num[1] == '100'){
-					$num[1] = '00';
-				}
-				$_POST['trn_number'][] = $num[1];
+			if (preg_match('/^sr_([0-9]{1,3})$/', $key, $num) && is_scalar($val) && is_numeric($val) && $val != 0) {
+				$_POST['trn_number'][] = $num[1] == '100' ? '00' : $num[1];
 				$_POST['trn_amount'][] = $val;
 			}
 		}
-		
-		//echo '<pre>'; print_r($_POST); echo '</pre>'; die;
-		foreach ($_POST['trn_number'] as $key => $val) {
-			if ($val == '') {
-				unset($_POST['trn_number'][$key]);
-				unset($_POST['trn_amount'][$key]);
-			}
-		}
-		foreach ($_POST['trn_amount'] as $key => $val) {
-			if ($val == '') {
-				unset($_POST['trn_number'][$key]);
-				unset($_POST['trn_amount'][$key]);
-			}
-		}
+
 		$updateopening = $this->crontoupdateclosing($_POST['party'], $_POST['dateoftrn']);
 		//echo $updateopening; die;	
 		//echo $Tb_Date_shift_party_entry_id; 
@@ -753,8 +755,14 @@ if($_POST['fromto_to']=='00'){
 	//	$num_f2 = $_POST['trn_number'];
 			//$num_f2 = array_map($this->replaceHundreds, $num_f2);
 		echo '<pre>'; print_r($_POST['trn_number']); echo '</pre>'; die;*/
-		$tbl_transactions_id = $this->Tbl_transactions_model->add_tbl_transaction($mastr); //die;
-		$tbl_transactions_only_id = $this->Tbl_transactions_model->add_tbl_only_transaction_may($tbl_transactions_id, $_POST);
+		if ($existing) {
+			$tbl_transactions_id = $existing['id'];
+			$this->Tbl_transactions_model->replace_sent_jantri($tbl_transactions_id, $mastr, $_POST);
+		} else {
+			$tbl_transactions_id = $this->Tbl_transactions_model->add_tbl_transaction($mastr);
+			$this->Tbl_transactions_model->add_tbl_only_transaction_may($tbl_transactions_id, $_POST);
+		}
+
 		/*added later*/	//$Tb_Date_shift_party_entry_id = $this->Tbl_transactions_model->add_Tb_Date_shift_party_entry($tbl_transactions_id,$Tb_Date_shift_party_entry);	
 
 		/* //commented for only number amount entry//	$tbl_transactions_rndomf4 = $this->Tbl_transactions_model->add_tbl_randomf4($tbl_transactions_id,$_POST);
@@ -766,9 +774,9 @@ if($_POST['fromto_to']=='00'){
 		if (!empty($if_trn_exist)) { //echo  'there';die;
 			$odata = $this->Tbl_transactions_model->get_transaction_result_total($if_trn_exist[0]['id']);
 			//echo '<pre>';print_r($odata); die;
-			$uTb_Date_shift_party_entry['Total_Number_amount'] = $ttnumber + $odata['Total_Number_amount'];
-			$uTb_Date_shift_party_entry['Total_Akhar_amount'] = $ttakharno + $odata['Total_Akhar_amount'];
-			$uTb_Date_shift_party_entry['Total_amount'] = $ttnumber + $ttakharno + $odata['Total_amount'];
+			$uTb_Date_shift_party_entry['Total_Number_amount'] = $ttnumber + $odata['Total_Number_amount'] - ($existing ? $existing['total_number_amount'] : 0);
+			$uTb_Date_shift_party_entry['Total_Akhar_amount'] = $ttakharno + $odata['Total_Akhar_amount'] - ($existing ? $existing['total_akhar_amount'] : 0);
+			$uTb_Date_shift_party_entry['Total_amount'] = $ttnumber + $ttakharno + $odata['Total_amount'] - ($existing ? $existing['total_number_amount'] + $existing['total_akhar_amount'] : 0);
 			$Tb_Date_shift_party_entry_id = $this->Tbl_transactions_model->update_Tb_Date_shift_party_entry($if_trn_exist[0]['id'], $uTb_Date_shift_party_entry);
 		} else {  //echo  'here';die;
 			$Tb_Date_shift_party_entry_id = $this->Tbl_transactions_model->add_Tb_Date_shift_party_entry($Tb_Date_shift_party_entry);
@@ -777,7 +785,21 @@ if($_POST['fromto_to']=='00'){
 
 		/*$this->session->set_flashdata('msg', 'Transactions Added');
 				 redirect(site_url('/transactions'));*/
-		$this->session->set_flashdata('message', 'Transactions Added');
+		if ($this->db->trans_status() === false) {
+			throw new Exception('Unable to save Jantri.');
+		}
+		$this->db->trans_commit();
+		$saved = true;
+		} catch (Exception $e) {
+			$this->db->trans_rollback();
+			log_message('error', 'sendjantri: ' . $e->getMessage());
+			$this->session->set_flashdata('message', 'Jantri could not be saved. Please try again.');
+		} finally {
+			$this->db->query('SELECT RELEASE_LOCK(?)', array($lockName));
+		}
+		if ($saved) {
+			$this->session->set_flashdata('message', $existing ? 'Transactions Updated' : 'Transactions Added');
+		}
 		redirect('/transactions');
 	}
 	function add_transaction_final_may()
